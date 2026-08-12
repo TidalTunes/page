@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Persistent Forms placeholder</title>
+  <desc id="desc">Pale contours emerge from a dark mathematical point cloud.</desc>
+  <rect width="1280" height="720" fill="oklch(16% 0.018 253)"/>
+  <g fill="oklch(76% 0.025 253)" fill-opacity=".38">
+    <circle cx="130" cy="148" r="2"/><circle cx="214" cy="519" r="2"/><circle cx="298" cy="271" r="2"/><circle cx="382" cy="602" r="2"/><circle cx="467" cy="182" r="2"/><circle cx="551" cy="431" r="2"/><circle cx="635" cy="99" r="2"/><circle cx="719" cy="548" r="2"/><circle cx="803" cy="327" r="2"/><circle cx="887" cy="651" r="2"/><circle cx="971" cy="227" r="2"/><circle cx="1055" cy="477" r="2"/><circle cx="1139" cy="132" r="2"/>
+  </g>
+  <g fill="none" stroke="oklch(87% 0.014 88)" stroke-opacity=".74">
+    <path d="M349 381c17-151 141-252 290-246 171 7 300 145 289 299-10 141-137 211-279 183-183-36-316-92-300-236Z"/>
+    <path d="M425 386c14-109 105-181 214-175 125 8 218 108 209 217-9 101-101 150-204 130-132-27-231-67-219-172Z"/>
+    <path d="M510 392c9-67 62-110 128-104 76 7 131 68 124 132-7 58-63 87-124 74-79-17-137-41-128-102Z"/>
+  </g>
+  <circle cx="638" cy="391" r="18" fill="oklch(48% 0.18 259)"/>
+</svg>

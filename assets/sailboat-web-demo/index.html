@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sailboat Backdrop</title>
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #4b8fa3;
+      }
+
+      sailboat-backdrop {
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        --sailboat-water: #4b8fa3;
+        --sailboat-wind: rgba(50, 123, 145, 0.58);
+        --sailboat-line: rgba(240, 252, 249, 0.58);
+        --sailboat-mark: #ffd6a5;
+      }
+    </style>
+  </head>
+  <body>
+    <sailboat-backdrop course-angle="-12" time-scale="5"></sailboat-backdrop>
+    <script src="./sailboat-backdrop.js"></script>
+  </body>
+</html>

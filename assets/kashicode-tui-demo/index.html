@@ -1,0 +1,125 @@
+<!doctype html>
+<!-- KASHICODE SCRIPTED TUI DEMO: static presentation only; no harness backend or model connection. -->
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta
+			name="description"
+			content="A self-contained, scripted macOS terminal simulation of the Kashicode coding harness."
+		/>
+		<title>Kashicode Terminal Demo</title>
+		<link rel="stylesheet" href="./styles.css" />
+	</head>
+	<body>
+		<main class="demo-stage">
+			<section class="terminal-window" aria-label="Kashicode scripted terminal demo">
+				<header class="terminal-titlebar">
+					<div class="traffic-lights" aria-hidden="true"><span></span><span></span><span></span></div>
+					<div class="terminal-title" id="terminal-title">
+						<span class="folder-icon" aria-hidden="true"></span>
+						<span id="terminal-title-text">kashi — zsh — 142×46</span>
+					</div>
+					<div class="titlebar-spacer" aria-hidden="true"></div>
+				</header>
+
+				<div class="terminal-viewport">
+					<section class="shell-screen" id="shell-screen" aria-label="Simulated command line">
+						<div class="shell-output" id="shell-output" aria-live="polite"></div>
+						<form class="shell-prompt-line" id="shell-form" autocomplete="off">
+							<span class="shell-user">kashi@studio-mac</span><span class="shell-separator">:</span><span class="shell-path">~/portfolio-lab</span><span class="shell-symbol">%</span>
+							<input id="shell-input" aria-label="Simulated terminal command" autocomplete="off" spellcheck="false" />
+						</form>
+					</section>
+
+					<section class="kashicode-screen" id="kashicode-screen" aria-label="Kashicode scripted interface" hidden>
+						<header class="kashi-header">
+							<strong class="kashi-brand">kashicode</strong>
+							<div class="kashi-hotkeys" aria-label="Keyboard shortcuts">
+								<span><b>/</b> commands</span><i>·</i>
+								<span><b>ctrl+l</b> model</span><i>·</i>
+								<span><b>shift+tab</b> thinking</span><i>·</i>
+								<span><b>ctrl+r</b> then <b>1–4</b> activity</span><i>·</i>
+								<span><b>!</b> bash</span><i>·</i>
+								<span><b>ctrl+c</b></span><i>·</i>
+								<span><b>ctrl+d</b> clear/exit</span>
+							</div>
+						</header>
+
+						<div class="kashi-rule"></div>
+						<div class="mode-line">
+							<span>Mode: <b>Coding</b></span><i>·</i>
+							<span>Repository memory: <b id="memory-mode-label">Read + update</b></span><i>·</i>
+							<span class="demo-label">SCRIPTED DEMO · NO MODEL/BACKEND</span>
+						</div>
+
+						<div class="kashi-workspace">
+							<section class="conversation-pane" aria-label="Demo conversation">
+								<div class="transcript" id="transcript" aria-live="polite"></div>
+								<button class="latest-button" id="latest-button" type="button" hidden>↓ latest</button>
+							</section>
+
+							<aside class="sidebar-rail" aria-label="Context and harness state">
+								<div class="context-panel">
+									<div class="context-line"><span class="muted">cwd</span> <span>~/portfolio-lab</span></div>
+									<button class="view-toggle" id="view-toggle" type="button" title="Toggle user/model transcript view">
+										<span class="muted">view</span> <span class="active" id="view-user">USER</span> <i>·</i> <span id="view-model">model</span> <span class="shortcut">ctrl+x</span>
+									</button>
+
+									<div class="panel-rule"></div>
+									<div class="context-heading"><strong>CONTEXT</strong> <b id="context-percent">1.6%</b></div>
+									<div class="context-used"><span class="muted">used</span> <span id="context-used">4.4k / 272k tokens</span> <b>auto</b></div>
+									<div class="context-meter"><span id="context-meter-fill"></span></div>
+
+									<div class="panel-rule"></div>
+									<div class="panel-title allocation-title">ALLOCATION</div>
+									<div class="allocation-list" id="allocation-list"></div>
+
+									<div class="panel-rule"></div>
+									<div class="panel-title skills-title">SKILLS <span id="skill-count">3</span></div>
+									<ul class="resource-list" id="skill-list"></ul>
+
+									<div class="panel-rule"></div>
+									<div class="panel-title files-title">FILES <span id="file-count">1</span></div>
+									<ul class="resource-list" id="file-list"></ul>
+
+									<div class="panel-rule"></div>
+									<div class="panel-title tools-title">TOOLS <span id="tool-count">9</span></div>
+									<div class="tool-list" id="tool-list">read bash edit write grep find ls history repo-info</div>
+								</div>
+							</aside>
+						</div>
+
+						<section class="prompt-region" aria-label="Kashicode prompt editor">
+							<div class="prompt-title">PROMPT</div>
+							<form id="prompt-form" autocomplete="off">
+								<textarea id="prompt-input" rows="1" aria-label="Ask the scripted Kashicode demo" autocomplete="off" spellcheck="false"></textarea>
+							</form>
+							<div class="command-menu" id="command-menu" role="listbox" aria-label="Demo commands" hidden></div>
+						</section>
+
+						<footer class="kashi-footer">
+							<div class="footer-cwd">~</div>
+							<div class="footer-stats-row">
+								<span id="footer-stats">demo</span>
+								<span class="footer-model">(<span id="footer-provider">scripted-demo</span>) <b id="footer-model">kashi-portfolio</b> <i>•</i> <b id="footer-thinking">medium</b></span>
+							</div>
+						</footer>
+
+						<div class="terminal-dialog-backdrop" id="model-dialog" hidden>
+							<div class="terminal-dialog" role="dialog" aria-modal="true" aria-labelledby="model-dialog-title">
+								<div class="dialog-title" id="model-dialog-title">Select demo model</div>
+								<div class="dialog-subtitle">Display-only options · no provider connection</div>
+								<div class="model-options" id="model-options"></div>
+								<div class="dialog-help">↑/↓ select · enter confirm · esc cancel</div>
+							</div>
+						</div>
+					</section>
+				</div>
+			</section>
+		</main>
+
+		<noscript>This scripted Kashicode terminal demo requires JavaScript for local playback.</noscript>
+		<script src="./demo.js"></script>
+	</body>
+</html>

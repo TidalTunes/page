@@ -1,0 +1,3214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Neural Forager</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      :root {
+        --game-ink: #171717;
+        --game-muted: #66625c;
+        --game-paper: #fffdf8;
+        --game-panel: #ffffff;
+        --game-line: #d7d2c8;
+        --game-green: #4e9f67;
+        --game-coral: #e85f4a;
+        --game-blue: #287c9d;
+        --game-yellow: #e8b93f;
+      }
+
+      body.game-page {
+        min-height: 100vh;
+        color: var(--game-ink);
+        background:
+          linear-gradient(90deg, rgba(23, 23, 23, 0.035) 1px, transparent 1px),
+          linear-gradient(0deg, rgba(23, 23, 23, 0.035) 1px, transparent 1px),
+          var(--game-paper);
+        background-size: 28px 28px;
+      }
+
+      .game-page .site-header {
+        padding: 14px 18px 8px;
+      }
+
+      .game-page main {
+        padding: 10px 18px 18px;
+      }
+
+      .game-shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(360px, 470px);
+        gap: 16px;
+        min-height: calc(100vh - 74px);
+      }
+
+      .game-stage,
+      .brain-panel {
+        min-width: 0;
+        border: 1px solid var(--game-line);
+        background: rgba(255, 255, 255, 0.82);
+      }
+
+      .game-stage {
+        position: relative;
+        display: grid;
+        grid-template-rows: auto minmax(420px, 1fr);
+      }
+
+      .game-hud {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 16px;
+        border-bottom: 1px solid var(--game-line);
+      }
+
+      .game-hud-spacer {
+        flex: 1 1 auto;
+      }
+
+      .energy-strip {
+        display: grid;
+        gap: 7px;
+        min-width: 156px;
+        padding: 10px 12px;
+        border: 1px solid var(--game-ink);
+        background: var(--game-yellow);
+        text-align: right;
+      }
+
+      .progression-panel {
+        display: grid;
+        gap: 6px;
+        min-width: 196px;
+        padding: 10px 12px;
+        border: 1px solid var(--game-ink);
+        background: #eef7f1;
+      }
+
+      .progression-panel span {
+        color: var(--game-muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .progression-panel strong {
+        font-size: 20px;
+        line-height: 1.1;
+      }
+
+      .progression-panel small {
+        color: var(--game-muted);
+        font-size: 12px;
+      }
+
+      .ability-choice {
+        display: none;
+        gap: 6px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .ability-choice.choice-open {
+        display: grid;
+      }
+
+      .ability-choice button {
+        min-height: 28px;
+        border: 1px solid var(--game-ink);
+        border-radius: 6px;
+        background: var(--game-panel);
+        color: var(--game-ink);
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .energy-strip span {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .energy-strip strong {
+        font-size: 34px;
+        line-height: 1;
+      }
+
+      .energy-meter {
+        height: 10px;
+        overflow: hidden;
+        border: 1px solid rgba(23, 23, 23, 0.62);
+        background: rgba(255, 253, 248, 0.82);
+      }
+
+      .energy-fill {
+        width: var(--energy-level, 60%);
+        height: 100%;
+        background: var(--game-green);
+        transition: width 0.16s ease, background-color 0.16s ease;
+      }
+
+      .energy-fill.energy-low {
+        background: var(--game-coral);
+      }
+
+      .arena-wrap {
+        position: relative;
+        min-height: 420px;
+        overflow: hidden;
+        background: #f7f9f2;
+      }
+
+      #arena {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+        touch-action: none;
+      }
+
+      #arena:active {
+        cursor: grabbing;
+      }
+
+      .arena-toolbar {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        right: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        pointer-events: none;
+      }
+
+      .brain-status {
+        max-width: min(520px, calc(100% - 92px));
+        padding: 7px 9px;
+        border: 1px solid rgba(23, 23, 23, 0.18);
+        background: rgba(255, 253, 248, 0.84);
+        color: var(--game-muted);
+        font-size: 13px;
+      }
+
+      .reset-button,
+      .save-button,
+      .clear-button {
+        min-height: 34px;
+        border: 1px solid var(--game-ink);
+        border-radius: 6px;
+        background: var(--game-panel);
+        color: var(--game-ink);
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .reset-button {
+        min-width: 72px;
+        pointer-events: auto;
+      }
+
+      .reset-button:hover,
+      .save-button:hover,
+      .clear-button:hover,
+      .wire-hit:hover + .wire-visible {
+        transform: translateY(-1px);
+      }
+
+      .reset-button:disabled,
+      .save-button:disabled,
+      .clear-button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+        transform: none;
+      }
+
+      .start-menu {
+        position: absolute;
+        inset: 0;
+        z-index: 8;
+        display: none;
+        place-items: center;
+        padding: 18px;
+        background: rgba(255, 253, 248, 0.74);
+        backdrop-filter: blur(3px);
+      }
+
+      .start-menu.menu-open {
+        display: grid;
+      }
+
+      .start-card {
+        display: grid;
+        gap: 10px;
+        width: min(360px, 100%);
+        padding: 16px;
+        border: 1px solid var(--game-ink);
+        border-radius: 8px;
+        background: var(--game-panel);
+        box-shadow: 0 10px 0 rgba(23, 23, 23, 0.08);
+      }
+
+      .start-card h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1;
+      }
+
+      .start-card p {
+        margin: 0;
+        color: var(--game-muted);
+        font-size: 14px;
+      }
+
+      .start-button {
+        min-height: 38px;
+        border: 1px solid var(--game-ink);
+        border-radius: 6px;
+        background: var(--game-green);
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .brain-panel {
+        display: grid;
+        grid-template-rows: auto 640px auto auto auto;
+      }
+
+      .brain-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--game-line);
+      }
+
+      .brain-header h2 {
+        margin: 0;
+        font-size: 22px;
+      }
+
+      .brain-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .add-node-button {
+        min-height: 28px;
+        border: 1px solid var(--game-ink);
+        border-radius: 6px;
+        background: #fff;
+        color: var(--game-ink);
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+
+      .brain-board {
+        position: relative;
+        min-height: 640px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at center, rgba(78, 159, 103, 0.08) 0 2px, transparent 2px 100%),
+          #fff;
+        background-size: 24px 24px;
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .brain-board:active {
+        cursor: grabbing;
+      }
+
+      .brain-space {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 760px;
+        height: 780px;
+        transform: translate(var(--brain-pan-x, 0px), var(--brain-pan-y, 0px)) scale(var(--brain-scale, 1));
+        transform-origin: 0 0;
+      }
+
+      .wire-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .wire-visible,
+      .wire-shadow,
+      .wire-hit {
+        fill: none;
+        stroke-linecap: round;
+      }
+
+      .wire-shadow {
+        stroke: rgba(23, 23, 23, 0.13);
+        stroke-width: 10;
+      }
+
+      .wire-visible {
+        stroke: #9a9a92;
+        stroke-width: 6;
+      }
+
+      .wire-hit {
+        stroke: transparent;
+        stroke-width: 18;
+        cursor: pointer;
+        pointer-events: stroke;
+      }
+
+      .wire-selected {
+        filter: drop-shadow(0 0 4px rgba(23, 23, 23, 0.32));
+      }
+
+      #preview-wire {
+        fill: none;
+        stroke: #9a9a92;
+        stroke-dasharray: 8 7;
+        stroke-linecap: round;
+        stroke-width: 5;
+      }
+
+      .wire-hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .brain-node {
+        position: absolute;
+        z-index: 2;
+        display: grid;
+        gap: 3px;
+        width: 112px;
+        min-height: 56px;
+        padding: 7px 9px;
+        border: 1.5px solid var(--game-ink);
+        border-radius: 7px;
+        background: var(--game-panel);
+        box-shadow: 0 5px 0 rgba(23, 23, 23, 0.08);
+        cursor: move;
+        user-select: none;
+      }
+
+      .hidden-node {
+        width: 96px;
+        background: #fbfbf4;
+      }
+
+      .mix-node {
+        width: 96px;
+        background: #fff8ed;
+      }
+
+      .node-hidden {
+        display: none;
+      }
+
+      .output-node {
+        width: 112px;
+      }
+
+      .node-label {
+        overflow: hidden;
+        padding-right: 12px;
+        font-size: 10px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .node-reading {
+        align-self: end;
+        font-size: 20px;
+        line-height: 1;
+      }
+
+      .node-arrow {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        width: 24px;
+        height: 24px;
+        border: 1px solid var(--game-line);
+        border-radius: 50%;
+        background: #fafafa;
+      }
+
+      .node-arrow::before {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 11px;
+        height: 2px;
+        background: var(--game-ink);
+        content: "";
+        transform: translate(-20%, -50%) rotate(var(--angle, 0deg));
+        transform-origin: 20% 50%;
+      }
+
+      .node-arrow::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        border-left: 6px solid var(--game-ink);
+        content: "";
+        transform: translate(7px, -50%) rotate(var(--angle, 0deg));
+        transform-origin: -7px 50%;
+      }
+
+      .wire-port {
+        position: absolute;
+        top: 50%;
+        width: 18px;
+        height: 18px;
+        border: 1.5px solid var(--game-ink);
+        border-radius: 50%;
+        background: var(--game-yellow);
+        cursor: grab;
+        touch-action: none;
+        transform: translateY(-50%);
+      }
+
+      .delete-node {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        z-index: 3;
+        width: 16px;
+        height: 16px;
+        border: 1px solid var(--game-line);
+        border-radius: 50%;
+        background: #fff;
+        color: var(--game-muted);
+        font: inherit;
+        font-size: 11px;
+        line-height: 12px;
+        cursor: pointer;
+      }
+
+      .wire-port:active {
+        cursor: grabbing;
+      }
+
+      .source-port {
+        right: -10px;
+      }
+
+      .target-port {
+        left: -10px;
+        background: var(--game-coral);
+      }
+
+      .hidden-node .target-port {
+        background: #d9d9d1;
+      }
+
+      .hidden-node .source-port {
+        background: #b8d7c0;
+      }
+
+      .mix-node .target-port {
+        background: #e8d6a8;
+      }
+
+      .mix-node .source-port {
+        background: #9fc6d1;
+      }
+
+      .connection-tuner {
+        display: grid;
+        gap: 9px;
+        padding: 12px 14px;
+        border-top: 1px solid var(--game-line);
+        background: #fffaf0;
+      }
+
+      .signal-controls {
+        display: grid;
+        gap: 9px;
+        padding: 12px 14px;
+        border-top: 1px solid var(--game-line);
+        background: #f7fbfb;
+      }
+
+      .signal-row {
+        display: grid;
+        grid-template-columns: 1fr minmax(120px, 1.2fr) 58px;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .tuner-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .connection-tuner label,
+      .signal-controls label {
+        font-weight: 700;
+      }
+
+      .signal-controls output {
+        color: var(--game-muted);
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+
+      .selected-connection {
+        color: var(--game-muted);
+        font-size: 13px;
+      }
+
+      #weight-value {
+        min-width: 76px;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+      }
+
+      .weight-slider {
+        width: 100%;
+        accent-color: var(--game-blue);
+      }
+
+      .polarity-labels {
+        display: flex;
+        justify-content: space-between;
+        color: var(--game-muted);
+        font-size: 12px;
+      }
+
+      .tuner-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .save-button {
+        background: var(--game-green);
+        color: #fff;
+      }
+
+      .clear-button {
+        background: #fff;
+      }
+
+      .event-log {
+        min-height: 38px;
+        padding: 10px 14px;
+        border-top: 1px solid var(--game-line);
+        color: var(--game-muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 960px) {
+        .game-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .brain-panel {
+          min-height: 760px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .game-page main {
+          padding-inline: 12px;
+        }
+
+        .game-hud {
+          align-items: start;
+          flex-direction: column;
+        }
+
+        .energy-strip {
+          align-self: stretch;
+          text-align: left;
+        }
+
+        .arena-toolbar {
+          align-items: stretch;
+        }
+
+        .brain-status {
+          max-width: none;
+        }
+
+        .brain-node {
+          width: 98px;
+        }
+
+        .hidden-node {
+          width: 86px;
+        }
+
+        .node-reading {
+          font-size: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body class="game-page">
+    <header class="site-header">
+      <nav class="top-nav" aria-label="Primary navigation">
+        <a href="index.html">MAIN</a>
+        <a href="blog.html">BLOG</a>
+        <a href="games.html" aria-current="page">GAMES</a>
+      </nav>
+    </header>
+
+    <main class="game-shell" aria-label="Neural Forager">
+      <section class="game-stage" aria-label="Neural forager arena">
+        <div class="game-hud">
+          <div class="game-hud-spacer" aria-hidden="true"></div>
+          <div class="progression-panel" aria-live="polite">
+            <span>Rogue Brain</span>
+            <strong id="level-count">Level 1</strong>
+            <small id="score-count">0 energy consumed</small>
+            <div class="ability-choice" id="ability-choice" aria-label="Choose a new ability"></div>
+          </div>
+          <div class="energy-strip" aria-live="polite">
+            <span>Energy</span>
+            <strong id="energy-count">60</strong>
+            <div class="energy-meter" aria-hidden="true">
+              <div class="energy-fill" id="energy-fill"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="arena-wrap">
+          <canvas id="arena" role="img" aria-label="A small creature moving through a field toward food"></canvas>
+          <div class="arena-toolbar">
+            <div class="brain-status" id="brain-status">No saved connections</div>
+            <button class="reset-button" id="reset-button" type="button">Reset</button>
+          </div>
+        </div>
+
+        <div class="start-menu menu-open" id="start-menu" role="dialog" aria-modal="true" aria-labelledby="start-title">
+          <div class="start-card">
+            <h1 id="start-title">Neural Forager</h1>
+            <p>Build a sparse brain, start at level 1, and spend energy to unlock the run.</p>
+            <button class="start-button" id="start-button" type="button">Start Run</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="brain-panel" aria-label="Sparse neural network editor">
+        <header class="brain-header">
+          <h2>Brain</h2>
+          <div class="brain-actions">
+            <button class="add-node-button" id="preset-seek-avoid" type="button">Seek/Avoid</button>
+            <button class="add-node-button" id="snap-nodes" type="button">Snap</button>
+            <button class="add-node-button" id="fit-brain" type="button">Fit</button>
+            <button class="add-node-button" id="add-hidden-node" type="button">+ Hidden</button>
+            <button class="add-node-button" id="add-mix-node" type="button">+ Multiply</button>
+          </div>
+        </header>
+
+        <div class="brain-board" id="brain-board">
+          <div class="brain-space" id="brain-space">
+            <svg class="wire-layer" id="wire-layer" aria-hidden="true">
+              <g id="wires"></g>
+              <path class="wire-hidden" id="preview-wire"></path>
+            </svg>
+
+            <div class="brain-node input-node" id="node-food-dir">
+              <span class="node-label">Food dir</span>
+              <output class="node-reading" id="reading-food-dir">0°</output>
+              <span class="node-arrow" id="arrow-food-dir" aria-hidden="true"></span>
+              <button class="wire-port source-port" type="button" data-source="foodDir" aria-label="Start connection from food direction"></button>
+            </div>
+
+            <div class="brain-node input-node" id="node-food-dist">
+              <span class="node-label">Food dist</span>
+              <output class="node-reading" id="reading-food-dist">0%</output>
+              <button class="wire-port source-port" type="button" data-source="foodDist" aria-label="Start connection from food distance"></button>
+            </div>
+
+            <div class="brain-node input-node" id="node-spike-dir">
+              <span class="node-label">Spike dir</span>
+              <output class="node-reading" id="reading-spike-dir">0°</output>
+              <span class="node-arrow" id="arrow-spike-dir" aria-hidden="true"></span>
+              <button class="wire-port source-port" type="button" data-source="spikeDir" aria-label="Start connection from nearest spike direction"></button>
+            </div>
+
+            <div class="brain-node input-node" id="node-spike-dist">
+              <span class="node-label">Spike dist</span>
+              <output class="node-reading" id="reading-spike-dist">0%</output>
+              <button class="wire-port source-port" type="button" data-source="spikeDist" aria-label="Start connection from nearest spike distance"></button>
+            </div>
+
+            <div class="brain-node input-node" id="node-creature-dir">
+              <span class="node-label">Creature dir</span>
+              <output class="node-reading" id="reading-creature-dir">0°</output>
+              <span class="node-arrow" id="arrow-creature-dir" aria-hidden="true"></span>
+              <button class="wire-port source-port" type="button" data-source="creatureDir" aria-label="Start connection from nearest creature direction"></button>
+            </div>
+
+            <div class="brain-node input-node" id="node-creature-dist">
+              <span class="node-label">Creature dist</span>
+              <output class="node-reading" id="reading-creature-dist">0%</output>
+              <button class="wire-port source-port" type="button" data-source="creatureDist" aria-label="Start connection from nearest creature distance"></button>
+            </div>
+
+            <div class="brain-node input-node" id="node-wander-dir">
+              <span class="node-label">Wander dir</span>
+              <output class="node-reading" id="reading-wander-dir">0°</output>
+              <span class="node-arrow" id="arrow-wander-dir" aria-hidden="true"></span>
+              <button class="wire-port source-port" type="button" data-source="wanderDir" aria-label="Start connection from switching random direction"></button>
+            </div>
+
+            <div class="brain-node input-node" id="node-fixed-dir">
+              <span class="node-label">Fixed dir</span>
+              <output class="node-reading" id="reading-fixed-dir">0°</output>
+              <span class="node-arrow" id="arrow-fixed-dir" aria-hidden="true"></span>
+              <button class="wire-port source-port" type="button" data-source="fixedDir" aria-label="Start connection from user-set fixed direction"></button>
+            </div>
+
+            <div class="brain-node hidden-node node-hidden" id="node-h1">
+              <button class="delete-node" type="button" data-delete-node="h1" aria-label="Delete hidden 1">x</button>
+              <span class="node-label">Hidden 1</span>
+              <output class="node-reading" id="reading-h1">0.00</output>
+              <button class="wire-port target-port" type="button" data-target="h1" aria-label="Connect to hidden 1"></button>
+              <button class="wire-port source-port" type="button" data-source="h1" aria-label="Start connection from hidden 1"></button>
+            </div>
+
+            <div class="brain-node hidden-node node-hidden" id="node-h2">
+              <button class="delete-node" type="button" data-delete-node="h2" aria-label="Delete hidden 2">x</button>
+              <span class="node-label">Hidden 2</span>
+              <output class="node-reading" id="reading-h2">0.00</output>
+              <button class="wire-port target-port" type="button" data-target="h2" aria-label="Connect to hidden 2"></button>
+              <button class="wire-port source-port" type="button" data-source="h2" aria-label="Start connection from hidden 2"></button>
+            </div>
+
+            <div class="brain-node hidden-node node-hidden" id="node-h3">
+              <button class="delete-node" type="button" data-delete-node="h3" aria-label="Delete hidden 3">x</button>
+              <span class="node-label">Hidden 3</span>
+              <output class="node-reading" id="reading-h3">0.00</output>
+              <button class="wire-port target-port" type="button" data-target="h3" aria-label="Connect to hidden 3"></button>
+              <button class="wire-port source-port" type="button" data-source="h3" aria-label="Start connection from hidden 3"></button>
+            </div>
+
+            <div class="brain-node mix-node node-hidden" id="node-m1">
+              <button class="delete-node" type="button" data-delete-node="m1" aria-label="Delete multiply 1">x</button>
+              <span class="node-label">Multiply 1</span>
+              <output class="node-reading" id="reading-m1">0.00</output>
+              <button class="wire-port target-port" type="button" data-target="m1" aria-label="Connect to multiply 1"></button>
+              <button class="wire-port source-port" type="button" data-source="m1" aria-label="Start connection from multiply 1"></button>
+            </div>
+
+            <div class="brain-node mix-node node-hidden" id="node-m2">
+              <button class="delete-node" type="button" data-delete-node="m2" aria-label="Delete multiply 2">x</button>
+              <span class="node-label">Multiply 2</span>
+              <output class="node-reading" id="reading-m2">0.00</output>
+              <button class="wire-port target-port" type="button" data-target="m2" aria-label="Connect to multiply 2"></button>
+              <button class="wire-port source-port" type="button" data-source="m2" aria-label="Start connection from multiply 2"></button>
+            </div>
+
+            <div class="brain-node output-node" id="node-output">
+              <span class="node-label">Accel dir</span>
+              <output class="node-reading" id="reading-output">idle</output>
+              <span class="node-arrow" id="arrow-output" aria-hidden="true"></span>
+              <button class="wire-port target-port" type="button" data-target="output" aria-label="Connect to acceleration direction"></button>
+            </div>
+
+            <div class="brain-node output-node" id="node-shoot">
+              <span class="node-label">Shoot</span>
+              <output class="node-reading" id="reading-shoot">idle</output>
+              <span class="node-arrow" id="arrow-shoot" aria-hidden="true"></span>
+              <button class="wire-port target-port" type="button" data-target="shoot" aria-label="Connect to projectile firing"></button>
+            </div>
+
+            <div class="brain-node output-node" id="node-dash">
+              <span class="node-label">Dash</span>
+              <output class="node-reading" id="reading-dash">idle</output>
+              <span class="node-arrow" id="arrow-dash" aria-hidden="true"></span>
+              <button class="wire-port target-port" type="button" data-target="dash" aria-label="Connect to timed dash"></button>
+            </div>
+
+            <div class="brain-node output-node" id="node-shock">
+              <span class="node-label">Shock</span>
+              <output class="node-reading" id="reading-shock">0%</output>
+              <button class="wire-port target-port" type="button" data-target="shock" aria-label="Connect to electric shock"></button>
+            </div>
+
+            <div class="brain-node output-node" id="node-dig">
+              <span class="node-label">Dig</span>
+              <output class="node-reading" id="reading-dig">0%</output>
+              <button class="wire-port target-port" type="button" data-target="dig" aria-label="Connect to digging mode"></button>
+            </div>
+
+            <div class="brain-node output-node" id="node-fly">
+              <span class="node-label">Fly</span>
+              <output class="node-reading" id="reading-fly">0%</output>
+              <button class="wire-port target-port" type="button" data-target="fly" aria-label="Connect to flying mode"></button>
+            </div>
+          </div>
+        </div>
+
+        <form class="connection-tuner" id="connection-tuner">
+          <div class="selected-connection" id="selected-connection">No connection selected</div>
+          <div class="tuner-row">
+            <label for="weight-slider">Connection amplitude</label>
+            <output id="weight-value" for="weight-slider">+0.80</output>
+          </div>
+          <input class="weight-slider" id="weight-slider" type="range" min="-1" max="1" value="0.8" step="0.05" disabled>
+          <div class="polarity-labels" aria-hidden="true">
+            <span>- red</span>
+            <span>0 gray</span>
+            <span>+ green</span>
+          </div>
+          <div class="tuner-actions">
+            <button class="save-button" id="save-connection" type="submit" disabled>Save</button>
+            <button class="clear-button" id="clear-connection" type="button" disabled>Clear</button>
+          </div>
+        </form>
+
+        <div class="signal-controls" aria-label="Direction input controls">
+          <div class="signal-row">
+            <label for="wander-rate">Wander switch</label>
+            <input class="weight-slider" id="wander-rate" type="range" min="0.25" max="5" value="1.2" step="0.05">
+            <output id="wander-rate-value" for="wander-rate">1.20s</output>
+          </div>
+          <div class="signal-row">
+            <label for="fixed-angle">Fixed angle</label>
+            <input class="weight-slider" id="fixed-angle" type="range" min="-180" max="180" value="0" step="1">
+            <output id="fixed-angle-value" for="fixed-angle">0°</output>
+          </div>
+        </div>
+
+        <div class="event-log" id="event-log" aria-live="polite">Connection editor idle.</div>
+      </aside>
+    </main>
+
+    <script>
+      const canvas = document.querySelector("#arena");
+      const context = canvas.getContext("2d");
+      const energyCount = document.querySelector("#energy-count");
+      const energyFill = document.querySelector("#energy-fill");
+      const levelCount = document.querySelector("#level-count");
+      const scoreCount = document.querySelector("#score-count");
+      const abilityChoice = document.querySelector("#ability-choice");
+      const resetButton = document.querySelector("#reset-button");
+      const startMenu = document.querySelector("#start-menu");
+      const startButton = document.querySelector("#start-button");
+      const brainStatus = document.querySelector("#brain-status");
+      const eventLog = document.querySelector("#event-log");
+      const board = document.querySelector("#brain-board");
+      const brainSpace = document.querySelector("#brain-space");
+      const wiresGroup = document.querySelector("#wires");
+      const previewWire = document.querySelector("#preview-wire");
+      const tuner = document.querySelector("#connection-tuner");
+      const weightSlider = document.querySelector("#weight-slider");
+      const weightValue = document.querySelector("#weight-value");
+      const wanderRate = document.querySelector("#wander-rate");
+      const wanderRateValue = document.querySelector("#wander-rate-value");
+      const fixedAngle = document.querySelector("#fixed-angle");
+      const fixedAngleValue = document.querySelector("#fixed-angle-value");
+      const saveConnection = document.querySelector("#save-connection");
+      const clearConnection = document.querySelector("#clear-connection");
+      const selectedConnection = document.querySelector("#selected-connection");
+      const presetSeekAvoid = document.querySelector("#preset-seek-avoid");
+      const snapNodes = document.querySelector("#snap-nodes");
+      const fitBrain = document.querySelector("#fit-brain");
+      const addHiddenNode = document.querySelector("#add-hidden-node");
+      const addMixNode = document.querySelector("#add-mix-node");
+      const storageKey = "neural-forager-graph-v2";
+      const legacyStorageKeys = ["neural-forager-connections", "neural-forager-connection"];
+      const foodCount = 10;
+      const spikeCount = 16;
+      const competitorCount = 5;
+
+      const nodeDefs = {
+        foodDir: { label: "Food dir", kind: "direction", defaultWeight: 0.8 },
+        foodDist: { label: "Food dist", kind: "distance", defaultWeight: 0.4 },
+        spikeDir: { label: "Spike dir", kind: "direction", defaultWeight: -0.8 },
+        spikeDist: { label: "Spike dist", kind: "distance", defaultWeight: -0.6 },
+        creatureDir: { label: "Creature dir", kind: "direction", defaultWeight: -0.55 },
+        creatureDist: { label: "Creature dist", kind: "distance", defaultWeight: -0.35 },
+        wanderDir: { label: "Wander dir", kind: "direction", defaultWeight: 0.25 },
+        fixedDir: { label: "Fixed dir", kind: "direction", defaultWeight: 0.35 },
+        h1: { label: "Hidden 1", kind: "hidden", defaultWeight: 0.7 },
+        h2: { label: "Hidden 2", kind: "hidden", defaultWeight: 0.7 },
+        h3: { label: "Hidden 3", kind: "hidden", defaultWeight: 0.7 },
+        m1: { label: "Multiply 1", kind: "mix", defaultWeight: 0.8 },
+        m2: { label: "Multiply 2", kind: "mix", defaultWeight: 0.8 },
+        output: { label: "Accel dir", kind: "output" },
+        shoot: { label: "Shoot", kind: "output", defaultWeight: 0.75 },
+        dash: { label: "Dash", kind: "output", defaultWeight: 0.85 },
+        shock: { label: "Shock", kind: "output", defaultWeight: 0.65 },
+        dig: { label: "Dig", kind: "output", defaultWeight: 0.55 },
+        fly: { label: "Fly", kind: "output", defaultWeight: 0.55 },
+      };
+      const nodeDomIds = {
+        foodDir: "node-food-dir",
+        foodDist: "node-food-dist",
+        spikeDir: "node-spike-dir",
+        spikeDist: "node-spike-dist",
+        creatureDir: "node-creature-dir",
+        creatureDist: "node-creature-dist",
+        wanderDir: "node-wander-dir",
+        fixedDir: "node-fixed-dir",
+        h1: "node-h1",
+        h2: "node-h2",
+        h3: "node-h3",
+        m1: "node-m1",
+        m2: "node-m2",
+        output: "node-output",
+        shoot: "node-shoot",
+        dash: "node-dash",
+        shock: "node-shock",
+        dig: "node-dig",
+        fly: "node-fly",
+      };
+      const hiddenNames = ["h1", "h2", "h3"];
+      const mixNames = ["m1", "m2"];
+      const inputNames = ["foodDir", "foodDist", "spikeDir", "spikeDist", "creatureDir", "creatureDist", "wanderDir", "fixedDir"];
+      const outputNames = ["output", "shoot", "dash", "shock", "dig", "fly"];
+      const optionalNames = [...hiddenNames, ...mixNames];
+      const edges = new Map();
+      const baseNodes = ["foodDir", "foodDist", "wanderDir", "output"];
+      const progressionInputUnlocks = {
+        3: ["spikeDir", "spikeDist"],
+        5: ["creatureDir", "creatureDist"],
+        7: ["fixedDir"],
+      };
+      const abilityNames = ["shoot", "dash", "shock", "dig", "fly"];
+      const levelThresholds = [0, 45, 110, 190, 290, 420, 570, 740, 930];
+      const activeNodes = new Set(baseNodes);
+      const brainWorld = { width: 760, height: 780 };
+      const defaultNodePositions = {
+        foodDir: { x: 18, y: 18 },
+        foodDist: { x: 18, y: 104 },
+        spikeDir: { x: 18, y: 190 },
+        spikeDist: { x: 18, y: 276 },
+        creatureDir: { x: 18, y: 362 },
+        creatureDist: { x: 18, y: 448 },
+        wanderDir: { x: 18, y: 534 },
+        fixedDir: { x: 18, y: 620 },
+        h1: { x: 332, y: 84 },
+        h2: { x: 332, y: 250 },
+        h3: { x: 332, y: 416 },
+        m1: { x: 332, y: 166 },
+        m2: { x: 332, y: 332 },
+        output: { x: 620, y: 84 },
+        shoot: { x: 620, y: 194 },
+        dash: { x: 620, y: 304 },
+        shock: { x: 620, y: 414 },
+        dig: { x: 620, y: 524 },
+        fly: { x: 620, y: 634 },
+      };
+      const nodePositions = Object.fromEntries(
+        Object.entries(defaultNodePositions).map(([name, position]) => [name, { ...position }])
+      );
+
+      const state = {
+        width: 1,
+        height: 1,
+        energy: 60,
+        maxEnergy: 100,
+        level: 1,
+        energyConsumed: 0,
+        pendingAbilityChoice: false,
+        isStarted: false,
+        unlockedAbilities: new Set(),
+        isDepleted: false,
+        selectedEdgeId: null,
+        draggingSource: null,
+        draggingNode: null,
+        panningBoard: null,
+        view: {
+          x: 0,
+          y: 0,
+          scale: 1,
+        },
+        viewLoaded: false,
+        worldWidth: 2400,
+        worldHeight: 1800,
+        camera: {
+          x: 0,
+          y: 0,
+          zoom: 1,
+          dragging: null,
+          keys: new Set(),
+        },
+        senses: {
+          foodDir: 0,
+          spikeDir: 0,
+          foodDist: 0,
+          spikeDist: 0,
+          creatureDir: 0,
+          creatureDist: 0,
+          wanderDir: 0,
+          fixedDir: 0,
+          foodDistancePx: 0,
+          spikeDistancePx: 0,
+          creatureDistancePx: 0,
+          foodVisibleCount: 0,
+          spikeVisibleCount: 0,
+          creatureVisibleCount: 0,
+        },
+        hidden: {
+          h1: 0,
+          h2: 0,
+          h3: 0,
+        },
+        mix: {
+          m1: 0,
+          m2: 0,
+        },
+        hiddenVectors: {
+          h1: { x: 0, y: 0 },
+          h2: { x: 0, y: 0 },
+          h3: { x: 0, y: 0 },
+        },
+        mixVectors: {
+          m1: { x: 0, y: 0 },
+          m2: { x: 0, y: 0 },
+        },
+        outputAngle: null,
+        outputMagnitude: 0,
+        outputs: Object.fromEntries(outputNames.map((name) => [name, { angle: null, magnitude: 0 }])),
+        projectiles: [],
+        abilityCooldowns: {
+          shoot: 0,
+          dash: 0,
+          shock: 0,
+        },
+        abilityEffects: {
+          dash: 0,
+          shock: 0,
+        },
+        modes: {
+          dig: 0,
+          fly: 0,
+        },
+        nearestSpikeIndex: 0,
+        visionRadius: 230,
+        wanderTimer: 0,
+        wanderInterval: 1.2,
+        fixedAngle: 0,
+        creature: { x: 120, y: 120, vx: 0, vy: 0, radius: 15 },
+        competitors: [],
+        foods: [],
+        spikes: [],
+      };
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function normalizeAngle(angle) {
+        return Math.atan2(Math.sin(angle), Math.cos(angle));
+      }
+
+      function angleToDegrees(angle) {
+        const degrees = Math.round(normalizeAngle(angle) * 180 / Math.PI);
+        return `${degrees}°`;
+      }
+
+      function randomBetween(min, max) {
+        return min + Math.random() * (max - min);
+      }
+
+      function worldToScreenX(x) {
+        return (x - state.camera.x) * state.camera.zoom;
+      }
+
+      function worldToScreenY(y) {
+        return (y - state.camera.y) * state.camera.zoom;
+      }
+
+      function visibleWorldWidth() {
+        return state.width / state.camera.zoom;
+      }
+
+      function visibleWorldHeight() {
+        return state.height / state.camera.zoom;
+      }
+
+      function screenToWorld(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: state.camera.x + (clientX - rect.left) / state.camera.zoom,
+          y: state.camera.y + (clientY - rect.top) / state.camera.zoom,
+        };
+      }
+
+      function clampCamera() {
+        state.camera.x = clamp(state.camera.x, 0, Math.max(0, state.worldWidth - visibleWorldWidth()));
+        state.camera.y = clamp(state.camera.y, 0, Math.max(0, state.worldHeight - visibleWorldHeight()));
+      }
+
+      function centerCameraOnCreature() {
+        state.camera.x = state.creature.x - visibleWorldWidth() * 0.5;
+        state.camera.y = state.creature.y - visibleWorldHeight() * 0.5;
+        clampCamera();
+      }
+
+      function zoomArenaAt(clientX, clientY, zoomFactor) {
+        const before = screenToWorld(clientX, clientY);
+        state.camera.zoom = clamp(state.camera.zoom * zoomFactor, 0.55, 2.4);
+        const rect = canvas.getBoundingClientRect();
+        state.camera.x = before.x - (clientX - rect.left) / state.camera.zoom;
+        state.camera.y = before.y - (clientY - rect.top) / state.camera.zoom;
+        clampCamera();
+      }
+
+      function startArenaPan(event) {
+        state.camera.dragging = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          cameraX: state.camera.x,
+          cameraY: state.camera.y,
+        };
+        canvas.setPointerCapture?.(event.pointerId);
+      }
+
+      function moveArenaPan(event) {
+        const drag = state.camera.dragging;
+        if (!drag || drag.pointerId !== event.pointerId) {
+          return;
+        }
+        state.camera.x = drag.cameraX - (event.clientX - drag.startX) / state.camera.zoom;
+        state.camera.y = drag.cameraY - (event.clientY - drag.startY) / state.camera.zoom;
+        clampCamera();
+      }
+
+      function finishArenaPan(event) {
+        if (!state.camera.dragging || state.camera.dragging.pointerId !== event.pointerId) {
+          return;
+        }
+        canvas.releasePointerCapture?.(event.pointerId);
+        state.camera.dragging = null;
+      }
+
+      function wheelArenaPan(event) {
+        event.preventDefault();
+        const zoomFactor = event.deltaY > 0 ? 0.9 : 1.1;
+        zoomArenaAt(event.clientX, event.clientY, zoomFactor);
+      }
+
+      function eventIsTextInput(event) {
+        const tagName = event.target?.tagName;
+        return tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT" || event.target?.isContentEditable;
+      }
+
+      function handleCameraKeyDown(event) {
+        const key = event.key.toLowerCase();
+        if (eventIsTextInput(event)) {
+          return;
+        }
+        if (["w", "a", "s", "d"].includes(key)) {
+          event.preventDefault();
+          state.camera.keys.add(key);
+        }
+        if (key === "+" || key === "=" || key === "-") {
+          event.preventDefault();
+          const rect = canvas.getBoundingClientRect();
+          const factor = key === "-" ? 0.88 : 1.12;
+          zoomArenaAt(rect.left + rect.width * 0.5, rect.top + rect.height * 0.5, factor);
+        }
+      }
+
+      function handleCameraKeyUp(event) {
+        state.camera.keys.delete(event.key.toLowerCase());
+      }
+
+      function updateCameraControls(dt) {
+        let x = 0;
+        let y = 0;
+        if (state.camera.keys.has("a")) x -= 1;
+        if (state.camera.keys.has("d")) x += 1;
+        if (state.camera.keys.has("w")) y -= 1;
+        if (state.camera.keys.has("s")) y += 1;
+        if (x === 0 && y === 0) {
+          return;
+        }
+        const magnitude = Math.hypot(x, y) || 1;
+        const speed = 560 / state.camera.zoom;
+        state.camera.x += x / magnitude * speed * dt;
+        state.camera.y += y / magnitude * speed * dt;
+        clampCamera();
+      }
+
+      function setEvent(message) {
+        eventLog.textContent = message;
+      }
+
+      function levelForScore(score) {
+        let level = 1;
+        levelThresholds.forEach((threshold, index) => {
+          if (score >= threshold) {
+            level = index + 1;
+          }
+        });
+        return level;
+      }
+
+      function updateProgressionHud() {
+        const nextThreshold = levelThresholds[state.level] ?? null;
+        levelCount.textContent = `Level ${state.level}`;
+        scoreCount.textContent = nextThreshold
+          ? `${Math.floor(state.energyConsumed)} / ${nextThreshold} energy consumed`
+          : `${Math.floor(state.energyConsumed)} energy consumed`;
+        abilityChoice.classList.toggle("choice-open", state.pendingAbilityChoice);
+      }
+
+      function gamePaused() {
+        return !state.isStarted || state.pendingAbilityChoice;
+      }
+
+      function setStartMenuOpen(isOpen) {
+        startMenu.classList.toggle("menu-open", isOpen);
+      }
+
+      function nodeUnlockedByProgression(name) {
+        if (baseNodes.includes(name) || optionalNames.includes(name)) {
+          return true;
+        }
+        if (state.unlockedAbilities.has(name)) {
+          return true;
+        }
+        return Object.entries(progressionInputUnlocks).some(([level, names]) => state.level >= Number(level) && names.includes(name));
+      }
+
+      function unlockProgressionNodes() {
+        baseNodes.forEach((name) => activeNodes.add(name));
+        Object.entries(progressionInputUnlocks).forEach(([level, names]) => {
+          if (state.level >= Number(level)) {
+            names.forEach((name) => activeNodes.add(name));
+          }
+        });
+        state.unlockedAbilities.forEach((name) => activeNodes.add(name));
+      }
+
+      function resetRunProgression() {
+        const optionalNodes = activeOptionalList();
+        activeNodes.clear();
+        baseNodes.forEach((name) => activeNodes.add(name));
+        optionalNodes.forEach((name) => activeNodes.add(name));
+        state.level = 1;
+        state.energyConsumed = 0;
+        state.pendingAbilityChoice = false;
+        state.unlockedAbilities.clear();
+        abilityChoice.replaceChildren();
+        pruneLockedEdges();
+        syncOptionalNodes();
+        updateProgressionHud();
+      }
+
+      function pruneLockedEdges() {
+        Array.from(edges.keys()).forEach((id) => {
+          const edge = edges.get(id);
+          if (!isNodeActive(edge.source) || !isNodeActive(edge.target)) {
+            edges.delete(id);
+          }
+        });
+        if (state.selectedEdgeId && !edges.has(state.selectedEdgeId)) {
+          state.selectedEdgeId = null;
+        }
+      }
+
+      function offerAbilityChoice() {
+        const choices = abilityNames.filter((name) => !state.unlockedAbilities.has(name)).slice(0, 3);
+        abilityChoice.replaceChildren();
+        if (choices.length === 0) {
+          state.pendingAbilityChoice = false;
+          updateProgressionHud();
+          return;
+        }
+        state.pendingAbilityChoice = true;
+        choices.forEach((name) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.textContent = nodeDefs[name].label;
+          button.addEventListener("click", () => chooseAbility(name));
+          abilityChoice.append(button);
+        });
+        updateProgressionHud();
+        setEvent(`Level ${state.level}: choose a new output ability.`);
+      }
+
+      function chooseAbility(name) {
+        if (!abilityNames.includes(name) || state.unlockedAbilities.has(name)) {
+          return;
+        }
+        state.unlockedAbilities.add(name);
+        activeNodes.add(name);
+        state.pendingAbilityChoice = false;
+        abilityChoice.replaceChildren();
+        syncOptionalNodes();
+        saveGraphState();
+        setEvent(`${nodeDefs[name].label} output unlocked.`);
+      }
+
+      function applyLevelProgression(previousLevel) {
+        unlockProgressionNodes();
+        syncOptionalNodes();
+        if (state.level > previousLevel) {
+          for (let level = previousLevel + 1; level <= state.level; level += 1) {
+            if (level % 2 === 1) {
+              const unlocked = progressionInputUnlocks[level] ?? [];
+              if (unlocked.length > 0) {
+                setEvent(`Level ${level}: ${unlocked.map((name) => nodeDefs[name].label).join(" and ")} unlocked.`);
+              }
+            } else if (!state.pendingAbilityChoice) {
+              offerAbilityChoice();
+            }
+          }
+          spawnCompetitors();
+          spawnSpikes();
+          saveGraphState();
+        }
+        updateProgressionHud();
+      }
+
+      function addConsumedEnergy(amount) {
+        if (amount <= 0) {
+          return;
+        }
+        const previousLevel = state.level;
+        state.energyConsumed += amount;
+        state.level = Math.max(state.level, levelForScore(state.energyConsumed));
+        applyLevelProgression(previousLevel);
+      }
+
+      function setEnergy(value, trackConsumption = true) {
+        const hadEnergy = state.energy > 0;
+        const previousEnergy = state.energy;
+        state.energy = clamp(value, 0, state.maxEnergy);
+        state.isDepleted = state.energy <= 0;
+        const rounded = Math.round(state.energy);
+        energyCount.textContent = String(rounded);
+        energyFill.style.setProperty("--energy-level", `${state.energy / state.maxEnergy * 100}%`);
+        energyFill.classList.toggle("energy-low", state.energy <= state.maxEnergy * 0.25);
+        if (trackConsumption && state.energy < previousEnergy) {
+          addConsumedEnergy(previousEnergy - state.energy);
+        }
+        return hadEnergy && state.isDepleted;
+      }
+
+      function formatWeight(weight) {
+        return `${weight >= 0 ? "+" : ""}${weight.toFixed(2)}`;
+      }
+
+      function edgeId(source, target) {
+        return `${source}->${target}`;
+      }
+
+      function parseEdgeId(id) {
+        const [source, target] = id.split("->");
+        return { source, target };
+      }
+
+      function edgeLabel(id) {
+        const { source, target } = parseEdgeId(id);
+        return `${nodeDefs[source].label} -> ${nodeDefs[target].label}`;
+      }
+
+      function isNodeActive(name) {
+        return Boolean(nodeDefs[name]) && activeNodes.has(name) && nodeUnlockedByProgression(name);
+      }
+
+      function activateNode(name) {
+        if (!nodeDefs[name] || isNodeActive(name)) {
+          return false;
+        }
+        activeNodes.add(name);
+        nodeElement(name)?.classList.remove("node-hidden");
+        updateAddButtons();
+        applyNodePositions();
+        renderWires();
+        updateBrainStatus();
+        return true;
+      }
+
+      function syncOptionalNodes() {
+        Object.keys(nodeDefs).forEach((name) => {
+          nodeElement(name)?.classList.toggle("node-hidden", !isNodeActive(name));
+        });
+        updateAddButtons();
+        applyNodePositions();
+      }
+
+      function updateAddButtons() {
+        addHiddenNode.disabled = hiddenNames.every((name) => activeNodes.has(name));
+        addMixNode.disabled = mixNames.every((name) => activeNodes.has(name));
+      }
+
+      function activeOptionalList() {
+        return optionalNames.filter((name) => activeNodes.has(name));
+      }
+
+      function nodeElement(name) {
+        return document.querySelector(`#${nodeDomIds[name]}`);
+      }
+
+      function applyBrainView() {
+        brainSpace.style.setProperty("--brain-pan-x", `${state.view.x}px`);
+        brainSpace.style.setProperty("--brain-pan-y", `${state.view.y}px`);
+        brainSpace.style.setProperty("--brain-scale", state.view.scale);
+      }
+
+      function clampNodePosition(name) {
+        const element = nodeElement(name);
+        const width = element?.offsetWidth || 112;
+        const height = element?.offsetHeight || 62;
+        nodePositions[name].x = clamp(nodePositions[name].x, 6, brainWorld.width - width - 6);
+        nodePositions[name].y = clamp(nodePositions[name].y, 6, brainWorld.height - height - 6);
+      }
+
+      function applyNodePositions() {
+        Object.keys(nodePositions).forEach((name) => {
+          const element = nodeElement(name);
+          if (!element) return;
+          clampNodePosition(name);
+          element.style.left = `${nodePositions[name].x}px`;
+          element.style.top = `${nodePositions[name].y}px`;
+        });
+        renderWires();
+      }
+
+      function saveGraphState() {
+        saveEdgesToStorage();
+      }
+
+      function viewportToWorld(clientX, clientY) {
+        const rect = board.getBoundingClientRect();
+        return {
+          x: (clientX - rect.left - state.view.x) / state.view.scale,
+          y: (clientY - rect.top - state.view.y) / state.view.scale,
+        };
+      }
+
+      function fitBrainView() {
+        const rect = board.getBoundingClientRect();
+        const scale = Math.min(rect.width / brainWorld.width, rect.height / brainWorld.height, 1.08);
+        state.view.scale = clamp(scale, 0.48, 1.2);
+        state.view.x = (rect.width - brainWorld.width * state.view.scale) / 2;
+        state.view.y = (rect.height - brainWorld.height * state.view.scale) / 2;
+        applyBrainView();
+        renderWires();
+        saveGraphState();
+      }
+
+      function snapNodesToLayers() {
+        const layers = {
+          input: inputNames,
+          middle: [...hiddenNames, ...mixNames].filter((name) => activeNodes.has(name)),
+          output: outputNames,
+        };
+        const layerX = { input: 18, middle: 332, output: 620 };
+        Object.entries(layers).forEach(([layer, names]) => {
+          const gap = Math.min(86, Math.max(62, (brainWorld.height - 80) / Math.max(names.length, 1)));
+          const startY = Math.max(16, (brainWorld.height - gap * (names.length - 1) - 58) / 2);
+          names.forEach((name, index) => {
+            nodePositions[name].x = layerX[layer];
+            nodePositions[name].y = startY + index * gap;
+          });
+        });
+        applyNodePositions();
+        saveGraphState();
+        setEvent("Nodes snapped into layers.");
+      }
+
+      function deleteOptionalNode(name) {
+        if (!optionalNames.includes(name) || !activeNodes.has(name)) {
+          return;
+        }
+        activeNodes.delete(name);
+        Array.from(edges.keys()).forEach((id) => {
+          const edge = edges.get(id);
+          if (edge.source === name || edge.target === name) {
+            edges.delete(id);
+          }
+        });
+        if (state.selectedEdgeId && !edges.has(state.selectedEdgeId)) {
+          state.selectedEdgeId = null;
+        }
+        syncOptionalNodes();
+        saveGraphState();
+        deselectEdge();
+        setEvent(`${nodeDefs[name].label} deleted.`);
+      }
+
+      function mixChannel(start, end, amount) {
+        return Math.round(start + (end - start) * amount);
+      }
+
+      function weightToWireColor(weight) {
+        const red = [216, 75, 63];
+        const gray = [154, 154, 146];
+        const green = [78, 159, 103];
+        const bounded = clamp(weight, -1, 1);
+        const target = bounded < 0 ? red : green;
+        const amount = Math.abs(bounded);
+        const mixed = gray.map((channel, index) => mixChannel(channel, target[index], amount));
+        return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
+      }
+
+      function sourcePort(nodeName) {
+        return document.querySelector(`[data-source="${nodeName}"]`);
+      }
+
+      function targetPort(nodeName) {
+        return document.querySelector(`[data-target="${nodeName}"]`);
+      }
+
+      function boardPointFromElement(element) {
+        const rect = element.getBoundingClientRect();
+        return viewportToWorld(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      }
+
+      function boardPointFromPointer(event) {
+        return viewportToWorld(event.clientX, event.clientY);
+      }
+
+      function setPath(path, start, end) {
+        const dx = end.x - start.x;
+        const curve = Math.max(48, Math.abs(dx) * 0.52);
+        path.setAttribute(
+          "d",
+          `M ${start.x} ${start.y} C ${start.x + curve} ${start.y}, ${end.x - curve} ${end.y}, ${end.x} ${end.y}`
+        );
+      }
+
+      function validTarget(source, target) {
+        if (!source || !target || source === target) {
+          return false;
+        }
+        if (!isNodeActive(source) || !isNodeActive(target)) {
+          return false;
+        }
+
+        const sourceKind = nodeDefs[source].kind;
+        const targetKind = nodeDefs[target].kind;
+        if (sourceKind === "hidden" || sourceKind === "mix") {
+          return targetKind === "output";
+        }
+        if (targetKind === "output") {
+          return true;
+        }
+        if (targetKind === "mix") {
+          const incoming = Array.from(edges.values()).filter((edge) => edge.target === target && edge.source !== source);
+          return incoming.length < 2;
+        }
+        return targetKind === "hidden";
+      }
+
+      function saveEdgesToStorage() {
+        const payload = {
+          nodes: activeOptionalList(),
+          edges: Array.from(edges.values()).map(({ source, target, weight }) => ({ source, target, weight })),
+          positions: nodePositions,
+          view: state.view,
+          signals: {
+            wanderInterval: state.wanderInterval,
+            fixedAngle: state.fixedAngle,
+          },
+          progression: {
+            level: state.level,
+            energyConsumed: state.energyConsumed,
+            unlockedAbilities: Array.from(state.unlockedAbilities),
+          },
+        };
+        localStorage.setItem(storageKey, JSON.stringify(payload));
+        legacyStorageKeys.forEach((key) => localStorage.removeItem(key));
+      }
+
+      function addOrDraftEdge(source, target) {
+        if (!validTarget(source, target)) {
+          setEvent("Connection rejected.");
+          return;
+        }
+
+        const id = edgeId(source, target);
+        if (!edges.has(id)) {
+          edges.set(id, {
+            id,
+            source,
+            target,
+            weight: nodeDefs[source].defaultWeight ?? 0.7,
+            draft: true,
+          });
+        } else {
+          edges.get(id).draft = true;
+        }
+        selectEdge(id);
+        renderWires();
+        setEvent(`${edgeLabel(id)} armed.`);
+      }
+
+      function putSavedEdge(source, target, weight) {
+        if (!validTarget(source, target)) {
+          return;
+        }
+        const id = edgeId(source, target);
+        edges.set(id, {
+          id,
+          source,
+          target,
+          weight,
+          draft: false,
+        });
+      }
+
+      function buildSeekAvoidPreset() {
+        if (state.level < 3) {
+          setEvent("Reach level 3 to unlock spike avoidance.");
+          return;
+        }
+        activateNode("m1");
+        edges.clear();
+        putSavedEdge("foodDir", "output", 0.65);
+        putSavedEdge("spikeDir", "m1", 1);
+        putSavedEdge("spikeDist", "m1", 1);
+        putSavedEdge("m1", "output", -1);
+        saveEdgesToStorage();
+        selectEdge(edgeId("m1", "output"));
+        updateSenses();
+        updateOutputFromNetwork();
+        updateBrainReadout();
+        renderWires();
+        setEvent("Seek food, avoid close spikes preset loaded.");
+      }
+
+      function selectEdge(id) {
+        if (!edges.has(id)) {
+          deselectEdge();
+          return;
+        }
+        state.selectedEdgeId = id;
+        const edge = edges.get(id);
+        selectedConnection.textContent = `Editing ${edgeLabel(id)}`;
+        weightSlider.value = String(edge.weight);
+        enableTuner(true);
+        updateWeightReadout();
+        updateBrainStatus();
+        renderWires();
+      }
+
+      function deselectEdge() {
+        state.selectedEdgeId = null;
+        selectedConnection.textContent = "No connection selected";
+        enableTuner(false);
+        updateWeightReadout();
+        updateBrainStatus();
+        renderWires();
+      }
+
+      function enableTuner(enabled) {
+        weightSlider.disabled = !enabled;
+        saveConnection.disabled = !enabled;
+        clearConnection.disabled = !enabled;
+      }
+
+      function updateWeightReadout() {
+        const value = Number(weightSlider.value);
+        weightValue.textContent = formatWeight(value);
+        weightSlider.style.accentColor = weightToWireColor(value);
+      }
+
+      function updateSignalControls() {
+        wanderRate.value = String(state.wanderInterval);
+        fixedAngle.value = String(Math.round(state.fixedAngle * 180 / Math.PI));
+        wanderRateValue.textContent = `${state.wanderInterval.toFixed(2)}s`;
+        fixedAngleValue.textContent = angleToDegrees(state.fixedAngle);
+      }
+
+      function updateBrainStatus() {
+        if (state.selectedEdgeId && edges.has(state.selectedEdgeId)) {
+          const edge = edges.get(state.selectedEdgeId);
+          brainStatus.textContent = `${edge.draft ? "Draft" : "Saved"}: ${edgeLabel(edge.id)} ${formatWeight(edge.weight)}`;
+          return;
+        }
+        brainStatus.textContent = edges.size > 0 ? `${edges.size} saved connection${edges.size === 1 ? "" : "s"}` : "No saved connections";
+      }
+
+      function renderWires() {
+        wiresGroup.replaceChildren();
+        edges.forEach((edge) => {
+          if (!isNodeActive(edge.source) || !isNodeActive(edge.target)) {
+            return;
+          }
+          const startPort = sourcePort(edge.source);
+          const endPort = targetPort(edge.target);
+          if (!startPort || !endPort) {
+            return;
+          }
+
+          const start = boardPointFromElement(startPort);
+          const end = boardPointFromElement(endPort);
+          const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          const shadow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          const hit = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          const visible = document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+          group.dataset.edgeId = edge.id;
+          shadow.setAttribute("class", "wire-shadow");
+          hit.setAttribute("class", "wire-hit");
+          visible.setAttribute("class", `wire-visible${state.selectedEdgeId === edge.id ? " wire-selected" : ""}`);
+          setPath(shadow, start, end);
+          setPath(hit, start, end);
+          setPath(visible, start, end);
+          visible.style.stroke = weightToWireColor(edge.weight);
+          visible.style.strokeWidth = String(4 + Math.abs(edge.weight) * 4);
+          visible.style.strokeDasharray = edge.draft ? "8 7" : "none";
+          hit.addEventListener("click", () => selectEdge(edge.id));
+          group.append(shadow, hit, visible);
+          wiresGroup.append(group);
+        });
+      }
+
+      function startWireDrag(event) {
+        const source = event.currentTarget.dataset.source;
+        event.preventDefault();
+        state.draggingSource = source;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        const start = boardPointFromElement(event.currentTarget);
+        const end = boardPointFromPointer(event);
+        setPath(previewWire, start, end);
+        previewWire.style.stroke = weightToWireColor(nodeDefs[source].defaultWeight ?? 0.7);
+        previewWire.classList.remove("wire-hidden");
+        setEvent(`${nodeDefs[source].label} wiring active.`);
+      }
+
+      function moveWireDrag(event) {
+        if (!state.draggingSource) {
+          return;
+        }
+
+        const start = boardPointFromElement(sourcePort(state.draggingSource));
+        const end = boardPointFromPointer(event);
+        setPath(previewWire, start, end);
+      }
+
+      function finishWireDrag(event) {
+        if (!state.draggingSource) {
+          return;
+        }
+
+        const source = state.draggingSource;
+        const port = sourcePort(source);
+        state.draggingSource = null;
+        if (event.pointerId !== undefined && port.hasPointerCapture(event.pointerId)) {
+          port.releasePointerCapture(event.pointerId);
+        }
+        previewWire.classList.add("wire-hidden");
+
+        const targetElement = document.elementFromPoint(event.clientX, event.clientY);
+        const targetPortElement = targetElement && targetElement.closest("[data-target]");
+        const target = targetPortElement ? targetPortElement.dataset.target : null;
+        if (target) {
+          addOrDraftEdge(source, target);
+          return;
+        }
+        setEvent("Wire dropped.");
+      }
+
+      function startNodeDrag(event) {
+        if (event.target.closest(".wire-port") || event.target.closest(".delete-node")) {
+          return;
+        }
+        const node = event.currentTarget;
+        const name = Object.keys(nodeDomIds).find((key) => nodeDomIds[key] === node.id);
+        if (!name) return;
+        event.preventDefault();
+        node.setPointerCapture(event.pointerId);
+        const point = viewportToWorld(event.clientX, event.clientY);
+        state.draggingNode = {
+          name,
+          offsetX: point.x - nodePositions[name].x,
+          offsetY: point.y - nodePositions[name].y,
+        };
+      }
+
+      function moveNodeDrag(event) {
+        if (!state.draggingNode) {
+          return;
+        }
+        const point = viewportToWorld(event.clientX, event.clientY);
+        const { name, offsetX, offsetY } = state.draggingNode;
+        nodePositions[name].x = point.x - offsetX;
+        nodePositions[name].y = point.y - offsetY;
+        applyNodePositions();
+      }
+
+      function finishNodeDrag() {
+        if (!state.draggingNode) {
+          return;
+        }
+        state.draggingNode = null;
+        saveGraphState();
+      }
+
+      function startBoardPan(event) {
+        if (event.target.closest(".brain-node") || event.target.closest(".wire-hit") || event.target.closest(".wire-port")) {
+          return;
+        }
+        event.preventDefault();
+        board.setPointerCapture(event.pointerId);
+        state.panningBoard = {
+          startX: event.clientX,
+          startY: event.clientY,
+          x: state.view.x,
+          y: state.view.y,
+        };
+      }
+
+      function moveBoardPan(event) {
+        if (!state.panningBoard) {
+          return;
+        }
+        state.view.x = state.panningBoard.x + event.clientX - state.panningBoard.startX;
+        state.view.y = state.panningBoard.y + event.clientY - state.panningBoard.startY;
+        applyBrainView();
+      }
+
+      function finishBoardPan() {
+        if (!state.panningBoard) {
+          return;
+        }
+        state.panningBoard = null;
+        saveGraphState();
+      }
+
+      function zoomBrain(event) {
+        event.preventDefault();
+        const oldScale = state.view.scale;
+        const nextScale = clamp(oldScale * (event.deltaY > 0 ? 0.9 : 1.1), 0.45, 1.35);
+        const rect = board.getBoundingClientRect();
+        const localX = event.clientX - rect.left;
+        const localY = event.clientY - rect.top;
+        const worldX = (localX - state.view.x) / oldScale;
+        const worldY = (localY - state.view.y) / oldScale;
+        state.view.scale = nextScale;
+        state.view.x = localX - worldX * nextScale;
+        state.view.y = localY - worldY * nextScale;
+        applyBrainView();
+        renderWires();
+        saveGraphState();
+      }
+
+      function saveWeight() {
+        if (!state.selectedEdgeId || !edges.has(state.selectedEdgeId)) {
+          return;
+        }
+        const edge = edges.get(state.selectedEdgeId);
+        edge.weight = Number(weightSlider.value);
+        edge.draft = false;
+        saveEdgesToStorage();
+        renderWires();
+        updateSenses();
+        updateOutputFromNetwork();
+        updateBrainReadout();
+        updateBrainStatus();
+        setEvent(`${edgeLabel(edge.id)} saved ${formatWeight(edge.weight)}.`);
+      }
+
+      function clearWeight() {
+        if (!state.selectedEdgeId || !edges.has(state.selectedEdgeId)) {
+          return;
+        }
+        const label = edgeLabel(state.selectedEdgeId);
+        edges.delete(state.selectedEdgeId);
+        if (edges.size === 0) {
+          optionalNames.forEach((name) => activeNodes.delete(name));
+          syncOptionalNodes();
+        }
+        saveEdgesToStorage();
+        deselectEdge();
+        setEvent(`${label} cleared.`);
+      }
+
+      function fitCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        state.width = Math.max(320, rect.width);
+        state.height = Math.max(320, rect.height);
+        state.visionRadius = Math.max(210, Math.min(300, Math.min(state.width, state.height) * 0.48));
+        canvas.width = Math.round(state.width * dpr);
+        canvas.height = Math.round(state.height * dpr);
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+        state.creature.x = clamp(state.creature.x, state.creature.radius, state.worldWidth - state.creature.radius);
+        state.creature.y = clamp(state.creature.y, state.creature.radius, state.worldHeight - state.creature.radius);
+        state.foods.forEach((food) => {
+          food.x = clamp(food.x, food.radius, state.worldWidth - food.radius);
+          food.y = clamp(food.y, food.radius, state.worldHeight - food.radius);
+        });
+        state.spikes.forEach((spike) => {
+          spike.x = clamp(spike.x, spike.radius, state.worldWidth - spike.radius);
+          spike.y = clamp(spike.y, spike.radius, state.worldHeight - spike.radius);
+        });
+        state.competitors.forEach((competitor) => {
+          competitor.x = clamp(competitor.x, competitor.radius, state.worldWidth - competitor.radius);
+          competitor.y = clamp(competitor.y, competitor.radius, state.worldHeight - competitor.radius);
+        });
+        clampCamera();
+        renderWires();
+      }
+
+      function spotIsClear(x, y, radius, ignoreSpikeIndex = -1) {
+        const creature = state.creature;
+        if (Math.hypot(x - creature.x, y - creature.y) < radius + creature.radius + 70) {
+          return false;
+        }
+        if (state.foods.some((food) => Math.hypot(x - food.x, y - food.y) < radius + food.radius + 38)) {
+          return false;
+        }
+        if (state.competitors.some((competitor) => Math.hypot(x - competitor.x, y - competitor.y) < radius + competitor.radius + 46)) {
+          return false;
+        }
+        return state.spikes.every((spike, index) => {
+          if (index === ignoreSpikeIndex) {
+            return true;
+          }
+          return Math.hypot(x - spike.x, y - spike.y) > radius + spike.radius + 42;
+        });
+      }
+
+      function randomClearPoint(radius, ignoreSpikeIndex = -1) {
+        const margin = radius + 22;
+        for (let attempt = 0; attempt < 80; attempt += 1) {
+          const x = randomBetween(margin, state.worldWidth - margin);
+          const y = randomBetween(margin, state.worldHeight - margin);
+          if (spotIsClear(x, y, radius, ignoreSpikeIndex)) {
+            return { x, y };
+          }
+        }
+        return {
+          x: randomBetween(margin, state.worldWidth - margin),
+          y: randomBetween(margin, state.worldHeight - margin),
+        };
+      }
+
+      function randomVisiblePoint(radius) {
+        const creature = state.creature;
+        for (let attempt = 0; attempt < 80; attempt += 1) {
+          const angle = randomBetween(0, Math.PI * 2);
+          const distance = randomBetween(creature.radius + radius + 78, state.visionRadius * 0.82);
+          const x = creature.x + Math.cos(angle) * distance;
+          const y = creature.y + Math.sin(angle) * distance;
+          if (
+            x > radius + 22 &&
+            x < state.worldWidth - radius - 22 &&
+            y > radius + 22 &&
+            y < state.worldHeight - radius - 22 &&
+            spotIsClear(x, y, radius)
+          ) {
+            return { x, y };
+          }
+        }
+        return randomClearPoint(radius);
+      }
+
+      function spawnFood(index, preferVisible = false) {
+        const radius = 12;
+        const point = preferVisible ? randomVisiblePoint(radius) : randomClearPoint(radius);
+        state.foods[index] = {
+          x: point.x,
+          y: point.y,
+          radius,
+          spin: randomBetween(0, Math.PI * 2),
+        };
+      }
+
+      function spawnFoods() {
+        state.foods = [];
+        const count = Math.min(foodCount, 5 + state.level);
+        for (let index = 0; index < count; index += 1) {
+          spawnFood(index, index === 0);
+        }
+      }
+
+      function spawnSpike(index) {
+        const radius = 13;
+        const point = randomClearPoint(radius, index);
+        state.spikes[index] = {
+          x: point.x,
+          y: point.y,
+          radius,
+          spin: randomBetween(0, Math.PI * 2),
+        };
+      }
+
+      function spawnSpikes() {
+        state.spikes = [];
+        if (state.level < 3) {
+          return;
+        }
+        const count = Math.min(spikeCount, 4 + state.level * 2);
+        for (let index = 0; index < count; index += 1) {
+          spawnSpike(index);
+        }
+      }
+
+      function spawnCompetitors() {
+        state.competitors = [];
+        if (state.level < 5) {
+          return;
+        }
+        const centerX = state.worldWidth * 0.5;
+        const centerY = state.worldHeight * 0.5;
+        const ring = Math.min(state.worldWidth, state.worldHeight) * 0.28;
+        const count = Math.min(competitorCount, Math.max(1, state.level - 4));
+        for (let index = 0; index < count; index += 1) {
+          const angle = index / count * Math.PI * 2 + Math.PI / 7;
+          state.competitors.push({
+            x: clamp(centerX + Math.cos(angle) * ring, 42, state.worldWidth - 42),
+            y: clamp(centerY + Math.sin(angle) * ring, 42, state.worldHeight - 42),
+            vx: 0,
+            vy: 0,
+            radius: 14,
+            phase: index * 1.73,
+          });
+        }
+      }
+
+      function resetGame() {
+        resetRunProgression();
+        state.creature.x = state.worldWidth * 0.5;
+        state.creature.y = state.worldHeight * 0.5;
+        state.creature.vx = 0;
+        state.creature.vy = 0;
+        state.wanderTimer = 0;
+        state.projectiles = [];
+        Object.keys(state.abilityCooldowns).forEach((name) => {
+          state.abilityCooldowns[name] = 0;
+        });
+        Object.keys(state.abilityEffects).forEach((name) => {
+          state.abilityEffects[name] = 0;
+        });
+        state.modes.dig = 0;
+        state.modes.fly = 0;
+        updateDirectionInputs(0);
+        centerCameraOnCreature();
+        setEnergy(60, false);
+        updateProgressionHud();
+        spawnCompetitors();
+        spawnFoods();
+        spawnSpikes();
+        updateSenses();
+        updateOutputFromNetwork();
+        updateBrainReadout();
+        draw();
+        setEvent("Arena reset. Start with food, wander noise, and movement; spend energy to level up.");
+      }
+
+      function startRun() {
+        resetGame();
+        state.isStarted = true;
+        setStartMenuOpen(false);
+        previousFrame = performance.now();
+        setEvent("Run started. Spend energy to level up.");
+      }
+
+      function normalizedCloseness(distance) {
+        const closeRange = state.visionRadius;
+        const contactRange = state.creature.radius + 28;
+        const linear = 1 - (distance - contactRange) / Math.max(1, closeRange - contactRange);
+        return Math.pow(clamp(linear, 0, 1), 1.7);
+      }
+
+      function objectField(objects) {
+        const creature = state.creature;
+        let x = 0;
+        let y = 0;
+        let totalWeight = 0;
+        let nearestDistance = Infinity;
+        let nearestIndex = -1;
+        let visibleCount = 0;
+
+        objects.forEach((object, index) => {
+          const dx = object.x - creature.x;
+          const dy = object.y - creature.y;
+          const distance = Math.hypot(dx, dy) || 1;
+          if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestIndex = index;
+          }
+
+          if (distance > state.visionRadius) {
+            return;
+          }
+
+          const weight = normalizedCloseness(distance);
+          if (weight <= 0) {
+            return;
+          }
+
+          visibleCount += 1;
+          totalWeight += weight;
+          x += dx / distance * weight;
+          y += dy / distance * weight;
+        });
+
+        const magnitude = Math.hypot(x, y);
+        return {
+          angle: magnitude > 0.001 ? Math.atan2(y, x) : 0,
+          strength: clamp(totalWeight, 0, 1),
+          distancePx: Number.isFinite(nearestDistance) ? nearestDistance : 0,
+          nearestIndex,
+          visibleCount,
+        };
+      }
+
+      function updateSenses() {
+        const foodField = objectField(state.foods);
+        const spikeField = state.level >= 3 ? objectField(state.spikes) : { angle: 0, strength: 0, distancePx: 0, nearestIndex: -1, visibleCount: 0 };
+        const creatureField = state.level >= 5 ? objectField(state.competitors) : { angle: 0, strength: 0, distancePx: 0, nearestIndex: -1, visibleCount: 0 };
+        state.senses.foodDir = foodField.angle;
+        state.senses.foodDist = foodField.strength;
+        state.senses.foodDistancePx = foodField.distancePx;
+        state.senses.foodVisibleCount = foodField.visibleCount;
+        state.senses.spikeDir = spikeField.angle;
+        state.senses.spikeDist = spikeField.strength;
+        state.senses.spikeDistancePx = spikeField.distancePx;
+        state.senses.spikeVisibleCount = spikeField.visibleCount;
+        state.senses.creatureDir = creatureField.angle;
+        state.senses.creatureDist = creatureField.strength;
+        state.senses.creatureDistancePx = creatureField.distancePx;
+        state.senses.creatureVisibleCount = creatureField.visibleCount;
+        state.nearestSpikeIndex = spikeField.nearestIndex;
+      }
+
+      function updateDirectionInputs(dt) {
+        state.wanderTimer -= dt;
+        if (state.wanderTimer <= 0) {
+          state.senses.wanderDir = randomBetween(-Math.PI, Math.PI);
+          state.wanderTimer = state.wanderInterval;
+        }
+        state.senses.fixedDir = state.fixedAngle;
+      }
+
+      function scalarValue(source) {
+        if (source === "foodDist" || source === "spikeDist" || source === "creatureDist") {
+          return state.senses[source];
+        }
+        if (mixNames.includes(source)) {
+          return state.mix[source];
+        }
+        if (hiddenNames.includes(source)) {
+          return state.hidden[source];
+        }
+        return 1;
+      }
+
+      function vectorValue(source) {
+        if (source === "foodDir") {
+          const visible = state.senses.foodDist > 0 ? 1 : 0;
+          return { x: Math.cos(state.senses.foodDir) * visible, y: Math.sin(state.senses.foodDir) * visible };
+        }
+        if (source === "spikeDir") {
+          const visible = state.senses.spikeDist > 0 ? 1 : 0;
+          return { x: Math.cos(state.senses.spikeDir) * visible, y: Math.sin(state.senses.spikeDir) * visible };
+        }
+        if (source === "creatureDir") {
+          const visible = state.senses.creatureDist > 0 ? 1 : 0;
+          return { x: Math.cos(state.senses.creatureDir) * visible, y: Math.sin(state.senses.creatureDir) * visible };
+        }
+        if (source === "wanderDir" || source === "fixedDir") {
+          return { x: Math.cos(state.senses[source]), y: Math.sin(state.senses[source]) };
+        }
+        if (source === "foodDist") {
+          return {
+            x: Math.cos(state.senses.foodDir) * state.senses.foodDist,
+            y: Math.sin(state.senses.foodDir) * state.senses.foodDist,
+          };
+        }
+        if (source === "spikeDist") {
+          return {
+            x: Math.cos(state.senses.spikeDir) * state.senses.spikeDist,
+            y: Math.sin(state.senses.spikeDir) * state.senses.spikeDist,
+          };
+        }
+        if (source === "creatureDist") {
+          return {
+            x: Math.cos(state.senses.creatureDir) * state.senses.creatureDist,
+            y: Math.sin(state.senses.creatureDir) * state.senses.creatureDist,
+          };
+        }
+        if (mixNames.includes(source)) {
+          return state.mixVectors[source] ?? { x: 0, y: 0 };
+        }
+        return state.hiddenVectors[source] ?? { x: 0, y: 0 };
+      }
+
+      function sourceBundle(source) {
+        return {
+          scalar: scalarValue(source),
+          vector: vectorValue(source),
+        };
+      }
+
+      function evaluateMixNodes() {
+        mixNames.forEach((name) => {
+          state.mix[name] = 0;
+          state.mixVectors[name] = { x: 0, y: 0 };
+        });
+
+        mixNames.forEach((name) => {
+          if (!activeNodes.has(name)) {
+            return;
+          }
+          const incoming = Array.from(edges.values()).filter((edge) => !edge.draft && edge.target === name).slice(0, 2);
+          if (incoming.length === 0) {
+            return;
+          }
+
+          let scalar = 1;
+          let vector = null;
+          incoming.forEach((edge) => {
+            const bundle = sourceBundle(edge.source);
+            scalar *= bundle.scalar * edge.weight;
+            const vectorMagnitude = Math.hypot(bundle.vector.x, bundle.vector.y);
+            if (vectorMagnitude > 0.001 && vector === null) {
+              vector = {
+                x: bundle.vector.x / vectorMagnitude,
+                y: bundle.vector.y / vectorMagnitude,
+              };
+            }
+          });
+
+          const magnitude = Math.abs(scalar);
+          state.mix[name] = clamp(magnitude, 0, 1);
+          if (vector) {
+            state.mixVectors[name] = {
+              x: vector.x * state.mix[name] * Math.sign(scalar || 1),
+              y: vector.y * state.mix[name] * Math.sign(scalar || 1),
+            };
+          }
+        });
+      }
+
+      function evaluateNetwork() {
+        evaluateMixNodes();
+        const hiddenRaw = { h1: 0, h2: 0, h3: 0 };
+        const hiddenVectors = {
+          h1: { x: 0, y: 0 },
+          h2: { x: 0, y: 0 },
+          h3: { x: 0, y: 0 },
+        };
+        const connectedHidden = new Set();
+
+        edges.forEach((edge) => {
+          if (edge.draft || !activeNodes.has(edge.target) || !hiddenNames.includes(edge.target)) {
+            return;
+          }
+          connectedHidden.add(edge.target);
+          hiddenRaw[edge.target] += scalarValue(edge.source) * edge.weight;
+          const vector = vectorValue(edge.source);
+          hiddenVectors[edge.target].x += vector.x * Math.abs(edge.weight);
+          hiddenVectors[edge.target].y += vector.y * Math.abs(edge.weight);
+        });
+
+        hiddenNames.forEach((name) => {
+          if (!activeNodes.has(name)) {
+            state.hidden[name] = 0;
+            state.hiddenVectors[name] = { x: 0, y: 0 };
+            return;
+          }
+          const magnitude = Math.hypot(hiddenVectors[name].x, hiddenVectors[name].y);
+          if (magnitude > 0.001) {
+            hiddenVectors[name].x /= magnitude;
+            hiddenVectors[name].y /= magnitude;
+          }
+        });
+
+        hiddenNames.forEach((name) => {
+          if (!connectedHidden.has(name)) {
+            state.hidden[name] = 0;
+            state.hiddenVectors[name] = { x: 0, y: 0 };
+            return;
+          }
+          state.hidden[name] = 1 / (1 + Math.exp(-hiddenRaw[name]));
+          state.hiddenVectors[name] = hiddenVectors[name];
+        });
+
+        const outputs = Object.fromEntries(outputNames.map((name) => [name, { x: 0, y: 0 }]));
+        edges.forEach((edge) => {
+          if (edge.draft || !isNodeActive(edge.source) || !outputNames.includes(edge.target)) {
+            return;
+          }
+          const vector = vectorValue(edge.source);
+          const scalar = hiddenNames.includes(edge.source) ? state.hidden[edge.source] : 1;
+          outputs[edge.target].x += vector.x * edge.weight * scalar;
+          outputs[edge.target].y += vector.y * edge.weight * scalar;
+        });
+
+        return outputs;
+      }
+
+      function updateOutputFromNetwork() {
+        const outputs = evaluateNetwork();
+        outputNames.forEach((name) => {
+          const vector = outputs[name];
+          const magnitude = Math.hypot(vector.x, vector.y);
+          if (magnitude > 0.001) {
+            state.outputs[name] = {
+              angle: Math.atan2(vector.y, vector.x),
+              magnitude: Math.min(magnitude, 1.35),
+            };
+          } else {
+            state.outputs[name] = { angle: null, magnitude: 0 };
+          }
+        });
+        state.outputAngle = state.outputs.output.angle;
+        state.outputMagnitude = state.outputs.output.magnitude;
+        return outputs;
+      }
+
+      function handleFoodCollision() {
+        const creature = state.creature;
+        state.foods.forEach((food, index) => {
+          if (Math.hypot(food.x - creature.x, food.y - creature.y) < creature.radius + food.radius) {
+            setEnergy(state.energy + 22);
+            spawnFood(index);
+            setEvent("Food absorbed: +22 energy.");
+          }
+        });
+      }
+
+      function handleSpikeCollisions() {
+        const creature = state.creature;
+        state.spikes.forEach((spike, index) => {
+          const dx = spike.x - creature.x;
+          const dy = spike.y - creature.y;
+          const distance = Math.hypot(dx, dy) || 1;
+          if (distance >= creature.radius + spike.radius) {
+            return;
+          }
+          setEnergy(state.energy - 35);
+          creature.vx -= dx / distance * 140;
+          creature.vy -= dy / distance * 140;
+          spawnSpike(index);
+          setEvent(state.isDepleted ? "Energy depleted. Reset to try again." : "Spike hit: -35 energy.");
+        });
+      }
+
+      function spendEnergy(amount) {
+        if (amount <= 0 || state.energy <= 0) {
+          return false;
+        }
+        const paid = Math.min(amount, state.energy);
+        const justDepleted = setEnergy(state.energy - paid);
+        if (justDepleted) {
+          setEvent("Energy depleted. Reset to try again.");
+        }
+        return paid >= amount * 0.35;
+      }
+
+      function updateAbilityTimers(dt) {
+        Object.keys(state.abilityCooldowns).forEach((name) => {
+          state.abilityCooldowns[name] = Math.max(0, state.abilityCooldowns[name] - dt);
+        });
+        Object.keys(state.abilityEffects).forEach((name) => {
+          state.abilityEffects[name] = Math.max(0, state.abilityEffects[name] - dt);
+        });
+      }
+
+      function triggerProjectile() {
+        if (!isNodeActive("shoot")) {
+          return;
+        }
+        const output = state.outputs.shoot;
+        if (output.angle === null || output.magnitude < 0.58 || state.abilityCooldowns.shoot > 0 || !spendEnergy(4.5)) {
+          return;
+        }
+        const creature = state.creature;
+        const speed = 470 + Math.min(output.magnitude, 1) * 120;
+        state.projectiles.push({
+          x: creature.x + Math.cos(output.angle) * (creature.radius + 8),
+          y: creature.y + Math.sin(output.angle) * (creature.radius + 8),
+          vx: Math.cos(output.angle) * speed + creature.vx * 0.2,
+          vy: Math.sin(output.angle) * speed + creature.vy * 0.2,
+          radius: 5,
+          life: 1.15,
+        });
+        state.abilityCooldowns.shoot = 0.42;
+        setEvent("Projectile fired: -4.5 energy.");
+      }
+
+      function triggerDash() {
+        if (!isNodeActive("dash")) {
+          return;
+        }
+        const output = state.outputs.dash;
+        if (output.angle === null || output.magnitude < 0.72 || state.abilityCooldowns.dash > 0 || !spendEnergy(9)) {
+          return;
+        }
+        const creature = state.creature;
+        const impulse = 250 + Math.min(output.magnitude, 1) * 210;
+        creature.vx += Math.cos(output.angle) * impulse;
+        creature.vy += Math.sin(output.angle) * impulse;
+        state.abilityCooldowns.dash = 1.15;
+        state.abilityEffects.dash = 0.22;
+        setEvent("Dash burst: -9 energy.");
+      }
+
+      function triggerShock() {
+        if (!isNodeActive("shock")) {
+          return;
+        }
+        const output = state.outputs.shock;
+        if (output.magnitude < 0.62 || state.abilityCooldowns.shock > 0 || !spendEnergy(12)) {
+          return;
+        }
+        const creature = state.creature;
+        state.competitors.forEach((competitor) => {
+          const dx = competitor.x - creature.x;
+          const dy = competitor.y - creature.y;
+          const distance = Math.hypot(dx, dy) || 1;
+          if (distance <= 170) {
+            const force = (1 - distance / 170) * 360;
+            competitor.vx += dx / distance * force;
+            competitor.vy += dy / distance * force;
+          }
+        });
+        state.abilityCooldowns.shock = 1.8;
+        state.abilityEffects.shock = 0.32;
+        setEvent("Electric shock: -12 energy.");
+      }
+
+      function updateModes(dt) {
+        state.modes.dig = isNodeActive("dig") ? clamp(state.outputs.dig.magnitude, 0, 1) : 0;
+        state.modes.fly = isNodeActive("fly") ? clamp(state.outputs.fly.magnitude, 0, 1) : 0;
+        const modeCost = (state.modes.dig * 3.2 + state.modes.fly * 4.8) * dt;
+        if (modeCost > 0.001) {
+          spendEnergy(modeCost);
+        }
+      }
+
+      function updateProjectiles(dt) {
+        state.projectiles = state.projectiles.filter((projectile) => {
+          projectile.x += projectile.vx * dt;
+          projectile.y += projectile.vy * dt;
+          projectile.life -= dt;
+          let active = projectile.life > 0
+            && projectile.x > 0
+            && projectile.y > 0
+            && projectile.x < state.worldWidth
+            && projectile.y < state.worldHeight;
+
+          state.competitors.forEach((competitor) => {
+            if (!active || Math.hypot(projectile.x - competitor.x, projectile.y - competitor.y) >= projectile.radius + competitor.radius + 4) {
+              return;
+            }
+            const angle = Math.atan2(competitor.y - projectile.y, competitor.x - projectile.x);
+            competitor.vx += Math.cos(angle) * 260;
+            competitor.vy += Math.sin(angle) * 260;
+            active = false;
+            setEvent("Projectile pushed a rival away.");
+          });
+          return active;
+        });
+      }
+
+      function nearestFoodFor(competitor) {
+        let nearest = null;
+        let nearestDistance = Infinity;
+        state.foods.forEach((food, index) => {
+          const distance = Math.hypot(food.x - competitor.x, food.y - competitor.y);
+          if (distance < nearestDistance) {
+            nearest = { food, index, distance };
+            nearestDistance = distance;
+          }
+        });
+        return nearest;
+      }
+
+      function updateCompetitors(dt) {
+        state.competitors.forEach((competitor, index) => {
+          const nearest = nearestFoodFor(competitor);
+          let desiredX = Math.cos(competitor.phase);
+          let desiredY = Math.sin(competitor.phase);
+
+          if (nearest) {
+            desiredX = nearest.food.x - competitor.x;
+            desiredY = nearest.food.y - competitor.y;
+          }
+
+          state.spikes.forEach((spike) => {
+            const dx = competitor.x - spike.x;
+            const dy = competitor.y - spike.y;
+            const distance = Math.hypot(dx, dy) || 1;
+            if (distance < 150) {
+              const push = (150 - distance) / 150;
+              desiredX += dx / distance * push * 420;
+              desiredY += dy / distance * push * 420;
+            }
+          });
+
+          const playerDx = competitor.x - state.creature.x;
+          const playerDy = competitor.y - state.creature.y;
+          const playerDistance = Math.hypot(playerDx, playerDy) || 1;
+          if (playerDistance < 150) {
+            const push = (150 - playerDistance) / 150;
+            desiredX += playerDx / playerDistance * push * 280;
+            desiredY += playerDy / playerDistance * push * 280;
+          }
+
+          const pulse = performance.now() * 0.001 + competitor.phase;
+          desiredX += Math.cos(pulse * 0.9) * 54;
+          desiredY += Math.sin(pulse * 1.1) * 54;
+
+          const magnitude = Math.hypot(desiredX, desiredY) || 1;
+          const acceleration = 190 + index * 7;
+          competitor.vx += desiredX / magnitude * acceleration * dt;
+          competitor.vy += desiredY / magnitude * acceleration * dt;
+          competitor.vx *= Math.pow(0.985, dt * 60);
+          competitor.vy *= Math.pow(0.985, dt * 60);
+
+          const speed = Math.hypot(competitor.vx, competitor.vy);
+          const maxSpeed = 126 + index * 4;
+          if (speed > maxSpeed) {
+            competitor.vx = competitor.vx / speed * maxSpeed;
+            competitor.vy = competitor.vy / speed * maxSpeed;
+          }
+
+          competitor.x += competitor.vx * dt;
+          competitor.y += competitor.vy * dt;
+
+          if (competitor.x < competitor.radius || competitor.x > state.worldWidth - competitor.radius) {
+            competitor.x = clamp(competitor.x, competitor.radius, state.worldWidth - competitor.radius);
+            competitor.vx *= -0.55;
+          }
+          if (competitor.y < competitor.radius || competitor.y > state.worldHeight - competitor.radius) {
+            competitor.y = clamp(competitor.y, competitor.radius, state.worldHeight - competitor.radius);
+            competitor.vy *= -0.55;
+          }
+
+          state.foods.forEach((food, foodIndex) => {
+            if (Math.hypot(food.x - competitor.x, food.y - competitor.y) < competitor.radius + food.radius) {
+              spawnFood(foodIndex);
+              setEvent("A rival creature absorbed food first.");
+            }
+          });
+        });
+      }
+
+      function updatePhysics(dt) {
+        const creature = state.creature;
+        updateDirectionInputs(dt);
+        updateSenses();
+        updateOutputFromNetwork();
+        updateAbilityTimers(dt);
+        updateProjectiles(dt);
+        if (state.isDepleted) {
+          creature.vx *= Math.pow(0.94, dt * 60);
+          creature.vy *= Math.pow(0.94, dt * 60);
+          updateCompetitors(dt);
+          updateSenses();
+          return;
+        }
+        triggerProjectile();
+        triggerDash();
+        triggerShock();
+        updateModes(dt);
+        if (state.outputAngle !== null) {
+          const acceleration = 330 * state.outputMagnitude;
+          const energyCost = state.outputMagnitude * 9 * dt;
+          const energyScale = energyCost > 0 ? Math.min(1, state.energy / energyCost) : 1;
+          const justDepleted = setEnergy(state.energy - energyCost);
+          creature.vx += Math.cos(state.outputAngle) * acceleration * energyScale * dt;
+          creature.vy += Math.sin(state.outputAngle) * acceleration * energyScale * dt;
+          if (justDepleted) {
+            setEvent("Energy depleted. Reset to try again.");
+          }
+        }
+
+        const damping = Math.pow(0.992 + state.modes.fly * 0.004, dt * 60);
+        creature.vx *= damping;
+        creature.vy *= damping;
+
+        const speed = Math.hypot(creature.vx, creature.vy);
+        const maxSpeed = 230 + state.modes.fly * 88 + state.abilityEffects.dash * 260;
+        if (speed > maxSpeed) {
+          creature.vx = creature.vx / speed * maxSpeed;
+          creature.vy = creature.vy / speed * maxSpeed;
+        }
+
+        creature.x += creature.vx * dt;
+        creature.y += creature.vy * dt;
+
+        if (creature.x < creature.radius || creature.x > state.worldWidth - creature.radius) {
+          creature.x = clamp(creature.x, creature.radius, state.worldWidth - creature.radius);
+          creature.vx *= -0.5;
+        }
+        if (creature.y < creature.radius || creature.y > state.worldHeight - creature.radius) {
+          creature.y = clamp(creature.y, creature.radius, state.worldHeight - creature.radius);
+          creature.vy *= -0.5;
+        }
+
+        handleFoodCollision();
+        if (state.modes.dig < 0.45) {
+          handleSpikeCollisions();
+        }
+        updateCompetitors(dt);
+        updateSenses();
+      }
+
+      function drawGrid() {
+        context.fillStyle = "#f7f9f2";
+        context.fillRect(0, 0, state.width, state.height);
+        context.strokeStyle = "rgba(23, 23, 23, 0.07)";
+        context.lineWidth = 1;
+        const startX = Math.floor(state.camera.x / 32) * 32;
+        const endX = state.camera.x + visibleWorldWidth();
+        const startY = Math.floor(state.camera.y / 32) * 32;
+        const endY = state.camera.y + visibleWorldHeight();
+        for (let x = startX; x < endX; x += 32) {
+          context.beginPath();
+          context.moveTo(worldToScreenX(x), 0);
+          context.lineTo(worldToScreenX(x), state.height);
+          context.stroke();
+        }
+        for (let y = startY; y < endY; y += 32) {
+          context.beginPath();
+          context.moveTo(0, worldToScreenY(y));
+          context.lineTo(state.width, worldToScreenY(y));
+          context.stroke();
+        }
+      }
+
+      function objectInVision(object) {
+        return Math.hypot(object.x - state.creature.x, object.y - state.creature.y) <= state.visionRadius;
+      }
+
+      function drawVisionRange() {
+        const creature = state.creature;
+        context.save();
+        context.fillStyle = "rgba(232, 185, 63, 0.07)";
+        context.strokeStyle = "rgba(40, 124, 157, 0.26)";
+        context.lineWidth = 2;
+        context.setLineDash([8, 8]);
+        context.beginPath();
+        context.arc(creature.x, creature.y, state.visionRadius, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+        context.restore();
+      }
+
+      function drawFood(food, isVisible) {
+        context.save();
+        context.translate(food.x, food.y);
+        context.rotate(food.spin + performance.now() * 0.002);
+        context.globalAlpha = isVisible ? 1 : 0.38;
+        context.fillStyle = "#e85f4a";
+        context.strokeStyle = "#171717";
+        context.lineWidth = 2;
+        context.beginPath();
+        for (let i = 0; i < 8; i += 1) {
+          const radius = i % 2 === 0 ? food.radius + 6 : food.radius - 2;
+          const angle = i / 8 * Math.PI * 2;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+          if (i === 0) context.moveTo(x, y);
+          else context.lineTo(x, y);
+        }
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.restore();
+      }
+
+      function drawSpike(spike, isNearest, isVisible) {
+        context.save();
+        context.translate(spike.x, spike.y);
+        context.rotate(spike.spin + performance.now() * 0.0014);
+        context.globalAlpha = isVisible ? 1 : 0.35;
+        context.fillStyle = isNearest ? "#6f686f" : "#8c8581";
+        context.strokeStyle = "#171717";
+        context.lineWidth = isNearest ? 2.5 : 2;
+        context.beginPath();
+        for (let i = 0; i < 12; i += 1) {
+          const radius = i % 2 === 0 ? spike.radius + 7 : spike.radius - 3;
+          const angle = i / 12 * Math.PI * 2;
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+          if (i === 0) context.moveTo(x, y);
+          else context.lineTo(x, y);
+        }
+        context.closePath();
+        context.fill();
+        context.stroke();
+        context.fillStyle = "#fffdf8";
+        context.beginPath();
+        context.arc(0, 0, 3, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+      }
+
+      function drawCompetitor(competitor, index, isVisible) {
+        const facing = Math.hypot(competitor.vx, competitor.vy) > 6 ? Math.atan2(competitor.vy, competitor.vx) : competitor.phase;
+        context.save();
+        context.translate(competitor.x, competitor.y);
+        context.rotate(facing);
+        context.globalAlpha = isVisible ? 1 : 0.36;
+        context.fillStyle = index % 2 === 0 ? "#287c9d" : "#6f686f";
+        context.strokeStyle = "#171717";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.ellipse(0, 0, competitor.radius + 4, competitor.radius - 1, 0, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+        context.fillStyle = "#fffdf8";
+        context.beginPath();
+        context.arc(7, -3.5, 3.2, 0, Math.PI * 2);
+        context.arc(7, 3.5, 3.2, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = "#171717";
+        context.lineWidth = 1.6;
+        context.beginPath();
+        context.moveTo(-8, -8);
+        context.lineTo(-15, -13);
+        context.moveTo(-8, 8);
+        context.lineTo(-15, 13);
+        context.stroke();
+        context.restore();
+      }
+
+      function drawVector() {
+        if (state.outputAngle === null) {
+          return;
+        }
+        const creature = state.creature;
+        const length = 44 + Math.min(state.outputMagnitude, 1) * 54;
+        const endX = creature.x + Math.cos(state.outputAngle) * length;
+        const endY = creature.y + Math.sin(state.outputAngle) * length;
+        context.strokeStyle = "#287c9d";
+        context.fillStyle = context.strokeStyle;
+        context.lineWidth = 4;
+        context.beginPath();
+        context.moveTo(creature.x, creature.y);
+        context.lineTo(endX, endY);
+        context.stroke();
+        context.save();
+        context.translate(endX, endY);
+        context.rotate(state.outputAngle);
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(-10, -6);
+        context.lineTo(-10, 6);
+        context.closePath();
+        context.fill();
+        context.restore();
+      }
+
+      function drawProjectiles() {
+        state.projectiles.forEach((projectile) => {
+          context.save();
+          context.translate(projectile.x, projectile.y);
+          context.fillStyle = "#287c9d";
+          context.strokeStyle = "#171717";
+          context.lineWidth = 1.5;
+          context.beginPath();
+          context.arc(0, 0, projectile.radius, 0, Math.PI * 2);
+          context.fill();
+          context.stroke();
+          context.restore();
+        });
+      }
+
+      function drawAbilityEffects() {
+        const creature = state.creature;
+        if (state.abilityEffects.shock > 0) {
+          context.save();
+          context.globalAlpha = state.abilityEffects.shock / 0.32;
+          context.strokeStyle = "#287c9d";
+          context.lineWidth = 4;
+          context.beginPath();
+          context.arc(creature.x, creature.y, 170 * (1 - state.abilityEffects.shock / 0.42), 0, Math.PI * 2);
+          context.stroke();
+          context.restore();
+        }
+        if (state.abilityEffects.dash > 0) {
+          context.save();
+          context.globalAlpha = state.abilityEffects.dash / 0.22;
+          context.strokeStyle = "#e8b93f";
+          context.lineWidth = 5;
+          context.beginPath();
+          context.arc(creature.x, creature.y, creature.radius + 17, 0, Math.PI * 2);
+          context.stroke();
+          context.restore();
+        }
+      }
+
+      function drawSenseVector(angle, strength, color, offset) {
+        if (strength <= 0.001) {
+          return;
+        }
+        const creature = state.creature;
+        const length = 34 + strength * 58;
+        const startX = creature.x;
+        const startY = creature.y + offset;
+        const endX = startX + Math.cos(angle) * length;
+        const endY = startY + Math.sin(angle) * length;
+        context.save();
+        context.strokeStyle = color;
+        context.fillStyle = color;
+        context.globalAlpha = 0.62;
+        context.lineWidth = 3;
+        context.beginPath();
+        context.moveTo(startX, startY);
+        context.lineTo(endX, endY);
+        context.stroke();
+        context.translate(endX, endY);
+        context.rotate(angle);
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(-8, -5);
+        context.lineTo(-8, 5);
+        context.closePath();
+        context.fill();
+        context.restore();
+      }
+
+      function drawCreature() {
+        const creature = state.creature;
+        const facing = Math.hypot(creature.vx, creature.vy) > 8 ? Math.atan2(creature.vy, creature.vx) : state.senses.foodDir;
+        context.save();
+        context.translate(creature.x, creature.y);
+        context.rotate(facing);
+        context.fillStyle = "#4e9f67";
+        context.strokeStyle = "#171717";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.ellipse(0, 0, creature.radius + 5, creature.radius, 0, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+        if (state.modes.fly > 0.08) {
+          context.strokeStyle = `rgba(40, 124, 157, ${0.25 + state.modes.fly * 0.35})`;
+          context.lineWidth = 3;
+          context.beginPath();
+          context.ellipse(-4, 0, creature.radius + 14, creature.radius + 9, 0, 0, Math.PI * 2);
+          context.stroke();
+        }
+        if (state.modes.dig > 0.08) {
+          context.fillStyle = `rgba(111, 104, 111, ${0.18 + state.modes.dig * 0.28})`;
+          context.beginPath();
+          context.ellipse(-10, 0, creature.radius + 18, creature.radius + 8, 0, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.fillStyle = "#fffdf8";
+        context.beginPath();
+        context.arc(7, -4, 4, 0, Math.PI * 2);
+        context.arc(7, 4, 4, 0, Math.PI * 2);
+        context.fill();
+        context.fillStyle = "#171717";
+        context.beginPath();
+        context.arc(8, -4, 1.7, 0, Math.PI * 2);
+        context.arc(8, 4, 1.7, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = "#171717";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(-9, -10);
+        context.lineTo(-17, -17);
+        context.moveTo(-9, 10);
+        context.lineTo(-17, 17);
+        context.stroke();
+        context.restore();
+      }
+
+      function draw() {
+        drawGrid();
+        context.save();
+        context.scale(state.camera.zoom, state.camera.zoom);
+        context.translate(-state.camera.x, -state.camera.y);
+        drawVisionRange();
+        if (state.level >= 3) {
+          state.spikes.forEach((spike, index) => drawSpike(spike, index === state.nearestSpikeIndex, objectInVision(spike)));
+        }
+        state.foods.forEach((food) => drawFood(food, objectInVision(food)));
+        if (state.level >= 5) {
+          state.competitors.forEach((competitor, index) => drawCompetitor(competitor, index, objectInVision(competitor)));
+        }
+        drawProjectiles();
+        drawSenseVector(state.senses.foodDir, state.senses.foodDist, "#e85f4a", -14);
+        if (isNodeActive("spikeDir")) {
+          drawSenseVector(state.senses.spikeDir, state.senses.spikeDist, "#6f686f", 14);
+        }
+        if (isNodeActive("creatureDir")) {
+          drawSenseVector(state.senses.creatureDir, state.senses.creatureDist, "#287c9d", 0);
+        }
+        drawSenseVector(state.senses.wanderDir, 0.52, "#4e9f67", 28);
+        if (isNodeActive("fixedDir")) {
+          drawSenseVector(state.senses.fixedDir, 0.52, "#e8b93f", -28);
+        }
+        drawVector();
+        drawAbilityEffects();
+        drawCreature();
+        context.restore();
+      }
+
+      function updateBrainReadout() {
+        document.querySelector("#reading-food-dir").textContent = angleToDegrees(state.senses.foodDir);
+        document.querySelector("#arrow-food-dir").style.setProperty("--angle", `${state.senses.foodDir}rad`);
+        document.querySelector("#reading-spike-dir").textContent = angleToDegrees(state.senses.spikeDir);
+        document.querySelector("#arrow-spike-dir").style.setProperty("--angle", `${state.senses.spikeDir}rad`);
+        document.querySelector("#reading-creature-dir").textContent = angleToDegrees(state.senses.creatureDir);
+        document.querySelector("#arrow-creature-dir").style.setProperty("--angle", `${state.senses.creatureDir}rad`);
+        document.querySelector("#reading-wander-dir").textContent = angleToDegrees(state.senses.wanderDir);
+        document.querySelector("#arrow-wander-dir").style.setProperty("--angle", `${state.senses.wanderDir}rad`);
+        document.querySelector("#reading-fixed-dir").textContent = angleToDegrees(state.senses.fixedDir);
+        document.querySelector("#arrow-fixed-dir").style.setProperty("--angle", `${state.senses.fixedDir}rad`);
+        document.querySelector("#reading-food-dist").textContent =
+          `${Math.round(state.senses.foodDistancePx)}px/${state.senses.foodVisibleCount}`;
+        document.querySelector("#reading-spike-dist").textContent =
+          `${Math.round(state.senses.spikeDistancePx)}px/${state.senses.spikeVisibleCount}`;
+        document.querySelector("#reading-creature-dist").textContent =
+          `${Math.round(state.senses.creatureDistancePx)}px/${state.senses.creatureVisibleCount}`;
+        hiddenNames.forEach((name) => {
+          const reading = document.querySelector(`#reading-${name}`);
+          if (reading) {
+            reading.textContent = state.hidden[name].toFixed(2);
+          }
+        });
+        mixNames.forEach((name) => {
+          const reading = document.querySelector(`#reading-${name}`);
+          if (reading) {
+            reading.textContent = state.mix[name].toFixed(2);
+          }
+        });
+        outputNames.forEach((name) => {
+          const reading = document.querySelector(`#reading-${name}`);
+          const arrow = document.querySelector(`#arrow-${name}`);
+          const output = state.outputs[name];
+          if (!reading || !output) {
+            return;
+          }
+          if (name === "dig" || name === "fly" || name === "shock") {
+            reading.textContent = `${Math.round(clamp(output.magnitude, 0, 1) * 100)}%`;
+            return;
+          }
+          if (output.angle === null) {
+            reading.textContent = "idle";
+            arrow?.style.setProperty("--angle", "0deg");
+            return;
+          }
+          reading.textContent = angleToDegrees(output.angle);
+          arrow?.style.setProperty("--angle", `${output.angle}rad`);
+        });
+      }
+
+      function loadEdges() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(storageKey) || "null");
+          const storedEdges = Array.isArray(stored) ? stored : stored?.edges;
+          const storedNodes = Array.isArray(stored?.nodes) ? stored.nodes : [];
+          unlockProgressionNodes();
+          if (stored?.positions && typeof stored.positions === "object") {
+            Object.entries(stored.positions).forEach(([name, position]) => {
+              if (nodePositions[name] && Number.isFinite(position?.x) && Number.isFinite(position?.y)) {
+                nodePositions[name] = { x: Number(position.x), y: Number(position.y) };
+              }
+            });
+          }
+          if (stored?.view && Number.isFinite(stored.view.x) && Number.isFinite(stored.view.y) && Number.isFinite(stored.view.scale)) {
+            state.view = {
+              x: Number(stored.view.x),
+              y: Number(stored.view.y),
+              scale: clamp(Number(stored.view.scale), 0.45, 1.35),
+            };
+            state.viewLoaded = true;
+          }
+          if (stored?.signals && Number.isFinite(stored.signals.wanderInterval)) {
+            state.wanderInterval = clamp(Number(stored.signals.wanderInterval), 0.25, 5);
+          }
+          if (stored?.signals && Number.isFinite(stored.signals.fixedAngle)) {
+            state.fixedAngle = normalizeAngle(Number(stored.signals.fixedAngle));
+          }
+          storedNodes.forEach((name) => {
+            if (optionalNames.includes(name)) {
+              activeNodes.add(name);
+            }
+          });
+          pruneLockedEdges();
+          if (Array.isArray(storedEdges)) {
+            storedEdges.forEach(({ source, target, weight }) => {
+              source = source === "noise" ? "wanderDir" : source;
+              target = target === "noise" ? "wanderDir" : target;
+              if (nodeDefs[source] && nodeDefs[target] && Number.isFinite(weight)) {
+                if (optionalNames.includes(source)) activeNodes.add(source);
+                if (optionalNames.includes(target)) activeNodes.add(target);
+              }
+            });
+            syncOptionalNodes();
+            storedEdges.forEach(({ source, target, weight }) => {
+              source = source === "noise" ? "wanderDir" : source;
+              target = target === "noise" ? "wanderDir" : target;
+              if (validTarget(source, target) && Number.isFinite(weight)) {
+                const id = edgeId(source, target);
+                edges.set(id, { id, source, target, weight: clamp(Number(weight), -1, 1), draft: false });
+              }
+            });
+          }
+        } catch {
+          localStorage.removeItem(storageKey);
+        }
+
+        try {
+          const legacy = JSON.parse(localStorage.getItem("neural-forager-connections") || "{}");
+          if (edges.size === 0 && Number.isFinite(legacy.food)) {
+            const id = edgeId("foodDir", "output");
+            edges.set(id, { id, source: "foodDir", target: "output", weight: clamp(Number(legacy.food), -1, 1), draft: false });
+          }
+        } catch {
+          localStorage.removeItem("neural-forager-connections");
+        }
+      }
+
+      let previousFrame = performance.now();
+      function frame(now) {
+        const dt = Math.min((now - previousFrame) / 1000, 0.033);
+        previousFrame = now;
+        updateCameraControls(dt);
+        if (!gamePaused()) {
+          updatePhysics(dt);
+        } else {
+          updateSenses();
+          updateOutputFromNetwork();
+        }
+        updateBrainReadout();
+        draw();
+        requestAnimationFrame(frame);
+      }
+
+      document.querySelectorAll("[data-source]").forEach((port) => {
+        port.addEventListener("pointerdown", startWireDrag);
+        port.addEventListener("pointermove", moveWireDrag);
+        port.addEventListener("pointerup", finishWireDrag);
+        port.addEventListener("pointercancel", finishWireDrag);
+      });
+      document.querySelectorAll(".brain-node").forEach((node) => {
+        node.addEventListener("pointerdown", startNodeDrag);
+      });
+      document.querySelectorAll("[data-delete-node]").forEach((button) => {
+        button.addEventListener("click", () => deleteOptionalNode(button.dataset.deleteNode));
+      });
+      board.addEventListener("pointerdown", startBoardPan);
+      board.addEventListener("wheel", zoomBrain, { passive: false });
+      window.addEventListener("pointermove", moveWireDrag);
+      window.addEventListener("pointermove", moveNodeDrag);
+      window.addEventListener("pointermove", moveBoardPan);
+      window.addEventListener("pointerup", finishWireDrag);
+      window.addEventListener("pointerup", finishNodeDrag);
+      window.addEventListener("pointerup", finishBoardPan);
+      window.addEventListener("pointercancel", finishWireDrag);
+      window.addEventListener("pointercancel", finishNodeDrag);
+      window.addEventListener("pointercancel", finishBoardPan);
+      window.addEventListener("mousemove", moveWireDrag);
+      window.addEventListener("mouseup", finishWireDrag);
+
+      tuner.addEventListener("submit", (event) => {
+        event.preventDefault();
+        saveWeight();
+      });
+
+      weightSlider.addEventListener("input", () => {
+        if (!state.selectedEdgeId || !edges.has(state.selectedEdgeId)) {
+          return;
+        }
+        const edge = edges.get(state.selectedEdgeId);
+        edge.weight = Number(weightSlider.value);
+        edge.draft = true;
+        updateWeightReadout();
+        renderWires();
+        updateBrainStatus();
+      });
+
+      wanderRate.addEventListener("input", () => {
+        state.wanderInterval = clamp(Number(wanderRate.value), 0.25, 5);
+        state.wanderTimer = Math.min(state.wanderTimer, state.wanderInterval);
+        updateSignalControls();
+        saveGraphState();
+      });
+
+      fixedAngle.addEventListener("input", () => {
+        state.fixedAngle = normalizeAngle(Number(fixedAngle.value) * Math.PI / 180);
+        state.senses.fixedDir = state.fixedAngle;
+        updateSignalControls();
+        updateBrainReadout();
+        saveGraphState();
+      });
+
+      clearConnection.addEventListener("click", clearWeight);
+      resetButton.addEventListener("click", () => {
+        resetGame();
+        state.isStarted = true;
+        setStartMenuOpen(false);
+        previousFrame = performance.now();
+      });
+      startButton.addEventListener("click", startRun);
+      canvas.addEventListener("pointerdown", startArenaPan);
+      canvas.addEventListener("pointermove", moveArenaPan);
+      canvas.addEventListener("pointerup", finishArenaPan);
+      canvas.addEventListener("pointercancel", finishArenaPan);
+      canvas.addEventListener("wheel", wheelArenaPan, { passive: false });
+      window.addEventListener("keydown", handleCameraKeyDown);
+      window.addEventListener("keyup", handleCameraKeyUp);
+      window.addEventListener("blur", () => state.camera.keys.clear());
+      presetSeekAvoid.addEventListener("click", buildSeekAvoidPreset);
+      snapNodes.addEventListener("click", snapNodesToLayers);
+      fitBrain.addEventListener("click", fitBrainView);
+      addHiddenNode.addEventListener("click", () => {
+        const next = hiddenNames.find((name) => !activeNodes.has(name));
+        if (next && activateNode(next)) {
+          saveEdgesToStorage();
+          setEvent(`${nodeDefs[next].label} added.`);
+        }
+      });
+      addMixNode.addEventListener("click", () => {
+        const next = mixNames.find((name) => !activeNodes.has(name));
+        if (next && activateNode(next)) {
+          saveEdgesToStorage();
+          setEvent(`${nodeDefs[next].label} added.`);
+        }
+      });
+      window.addEventListener("resize", fitCanvas);
+      new ResizeObserver(fitCanvas).observe(board);
+      new ResizeObserver(fitCanvas).observe(canvas);
+
+      loadEdges();
+      syncOptionalNodes();
+      updateProgressionHud();
+      updateWeightReadout();
+      updateSignalControls();
+      fitCanvas();
+      if (state.viewLoaded) {
+        applyBrainView();
+      } else {
+        fitBrainView();
+      }
+      applyNodePositions();
+      resetGame();
+      renderWires();
+      const firstEdge = edges.keys().next().value;
+      if (firstEdge) selectEdge(firstEdge);
+      else deselectEdge();
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>

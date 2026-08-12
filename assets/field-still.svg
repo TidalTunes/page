@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Vector field still</title>
+  <desc id="desc">Fine paths curve across a warm paper-colored mathematical field.</desc>
+  <rect width="1600" height="900" fill="oklch(96.8% 0.012 88)"/>
+  <g fill="none" stroke="oklch(38% 0.025 253)" stroke-opacity=".22" stroke-width="1">
+    <path d="M-40 134C162 32 314 294 515 176S877 50 1057 198s337 86 590-62"/>
+    <path d="M-16 204C188 86 349 362 536 231S868 99 1084 272s347 48 568-49"/>
+    <path d="M-42 274C159 145 361 427 550 291S881 169 1098 334s366 27 557-51"/>
+    <path d="M-62 349C133 202 362 490 561 354S890 237 1115 400s365 4 565-77"/>
+    <path d="M-69 427C132 273 379 554 580 421s330-109 548 45 352-10 544-92"/>
+    <path d="M-64 510C150 346 397 616 602 488s323-94 532 52 341-17 528-100"/>
+    <path d="M-39 595C175 433 420 678 628 556s326-74 521 62 328-22 499-105"/>
+    <path d="M-17 685C206 523 451 736 664 628s307-47 489 75 313-22 475-108"/>
+    <path d="M7 781C244 622 482 799 699 702s293-15 461 86 289-12 461-99"/>
+  </g>
+  <g fill="none" stroke="oklch(48% 0.18 259)" stroke-opacity=".52" stroke-width="1.5">
+    <path d="M-22 391C184 233 377 520 578 383s331-106 548 54 355 0 547-83"/>
+    <path d="M-31 568C185 400 407 651 617 526s318-82 521 58 335-20 518-103"/>
+  </g>
+</svg>

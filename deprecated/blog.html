@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blog</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="top-nav" aria-label="Primary navigation">
+        <a href="index.html">MAIN</a>
+        <a href="blog.html" aria-current="page">BLOG</a>
+        <a href="games.html">GAMES</a>
+      </nav>
+    </header>
+
+    <main class="blog-main">
+      <section class="blog-layout">
+        <h1>Blog</h1>
+
+        <input class="post-toggle" type="radio" name="post" id="post-one" checked>
+        <input class="post-toggle" type="radio" name="post" id="post-two">
+        <input class="post-toggle" type="radio" name="post" id="post-three">
+
+        <div class="post-switcher" aria-label="Blog posts">
+          <label for="post-one">2026-05-17</label>
+          <label for="post-two">2026-04-12</label>
+          <label for="post-three">2026-03-03</label>
+        </div>
+
+        <div class="post-stack">
+          <article class="blog-post post-one">
+            <time datetime="2026-05-17">2026-05-17</time>
+            <h2>First Post Title</h2>
+            <p>Placeholder text for a short blog post preview.</p>
+          </article>
+          <article class="blog-post post-two">
+            <time datetime="2026-04-12">2026-04-12</time>
+            <h2>Second Post Title</h2>
+            <p>Placeholder text for another short blog post preview.</p>
+          </article>
+          <article class="blog-post post-three">
+            <time datetime="2026-03-03">2026-03-03</time>
+            <h2>Third Post Title</h2>
+            <p>Placeholder text for a future dated blog post.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span class="copyright">&copy; 2026 Your Name</span>
+      <span class="footer-links">
+        <a href="mailto:you@example.com">you@example.com</a>
+        <a href="https://www.linkedin.com/" rel="noreferrer">LinkedIn</a>
+        <a href="https://github.com/" rel="noreferrer">GitHub</a>
+      </span>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 750" role="img" aria-labelledby="title desc">
+  <title id="title">Lattice Walks placeholder</title>
+  <desc id="desc">A precise triangular lattice crossed by selected paths.</desc>
+  <rect width="1000" height="750" fill="oklch(98.7% 0.006 88)"/>
+  <g stroke="oklch(76% 0.012 253)" stroke-width="1">
+    <path d="M0 75h1000M0 175h1000M0 275h1000M0 375h1000M0 475h1000M0 575h1000M0 675h1000"/>
+    <path d="M50 0v750M150 0v750M250 0v750M350 0v750M450 0v750M550 0v750M650 0v750M750 0v750M850 0v750M950 0v750"/>
+  </g>
+  <g fill="oklch(20.5% 0.014 253)">
+    <circle cx="150" cy="575" r="4"/><circle cx="250" cy="575" r="4"/><circle cx="250" cy="475" r="4"/><circle cx="350" cy="475" r="4"/><circle cx="350" cy="375" r="4"/><circle cx="450" cy="375" r="4"/><circle cx="450" cy="275" r="4"/><circle cx="550" cy="275" r="4"/><circle cx="650" cy="275" r="4"/><circle cx="650" cy="175" r="4"/><circle cx="750" cy="175" r="4"/><circle cx="850" cy="175" r="4"/>
+  </g>
+  <path d="M150 575h100V475h100V375h100V275h200V175h200" fill="none" stroke="oklch(48% 0.18 259)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M150 575V475H50M350 475h100v100h100V475h100" fill="none" stroke="oklch(36% 0.025 253)" stroke-opacity=".65" stroke-width="2"/>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800" role="img" aria-labelledby="title desc">
+  <title id="title">Spectral Sail placeholder</title>
+  <desc id="desc">Flow lines and a sail-shaped policy trace in blue.</desc>
+  <rect width="1280" height="800" fill="oklch(94.8% 0.009 230)"/>
+  <g fill="none" stroke="oklch(55% 0.018 253)" stroke-opacity=".42" stroke-width="1">
+    <path d="M0 108C237 51 312 193 520 144s325-128 760-53"/>
+    <path d="M0 179c222-66 351 88 551 25s337-133 729-63"/>
+    <path d="M0 257c239-78 387 88 583 16s354-122 697-57"/>
+    <path d="M0 344c269-93 420 85 618 4s374-102 662-49"/>
+    <path d="M0 440c307-107 445 84 650-4s382-74 630-33"/>
+    <path d="M0 544c318-111 474 70 690-18s368-39 590-13"/>
+    <path d="M0 655c328-99 510 50 729-28s346-4 551 5"/>
+  </g>
+  <path d="M175 653C328 634 439 555 523 443s167-257 314-281c-29 84-55 192-63 300-10 136 32 204 113 243-214 35-481 26-712-52Z" fill="oklch(48% 0.18 259)" fill-opacity=".88"/>
+  <path d="M166 663C342 624 471 538 557 411s167-230 334-270" fill="none" stroke="oklch(22% 0.09 259)" stroke-width="3"/>
+  <g fill="oklch(30% 0.115 259)">
+    <circle cx="166" cy="663" r="6"/><circle cx="557" cy="411" r="6"/><circle cx="891" cy="141" r="6"/>
+  </g>
+</svg>

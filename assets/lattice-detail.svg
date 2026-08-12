@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" role="img" aria-label="Lattice detail">
+  <rect width="600" height="800" fill="oklch(98.7% 0.006 88)"/>
+  <g fill="none" stroke="oklch(64% 0.014 253)" stroke-width="1">
+    <path d="m300 72 220 127v254L300 580 80 453V199Z"/>
+    <path d="m300 142 159 92v184l-159 92-159-92V234Z"/>
+    <path d="m300 212 99 57v114l-99 57-99-57V269Z"/>
+  </g>
+  <path d="M80 453 300 326l159 92" fill="none" stroke="oklch(48% 0.18 259)" stroke-width="6" stroke-linecap="round"/>
+  <g fill="oklch(20.5% 0.014 253)"><circle cx="80" cy="453" r="5"/><circle cx="300" cy="326" r="5"/><circle cx="459" cy="418" r="5"/></g>
+</svg>
