@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Selected mathematics and computer science projects by Kashi Tuteja.">
+    <meta name="theme-color" content="#4b8fa3">
+    <title>Kashi Tuteja</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geologica:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="assets/sailboat-web-demo/sailboat-backdrop.js" defer></script>
+    <script src="gallery.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#project-wall">Skip to project thumbnails</a>
+
+    <header class="site-header">
+      <span class="wordmark">Kashi Tuteja</span>
+      <a class="wordmark" href="index.html">2026 Projects</a>
+    </header>
+
+    <main class="gallery-stage">
+      <section class="backdrop-project" aria-labelledby="sailboat-title">
+        <h1 class="visually-hidden" id="sailboat-title">sailboat_RL</h1>
+        <sailboat-backdrop class="sailing-background" course-angle="-50" zoom="2.1" view-offset-x="-10" view-offset-y="52" time-scale="5" aria-hidden="true"></sailboat-backdrop>
+        <img class="sailing-still" src="assets/sailboat-still.jpg" alt="">
+
+        <article class="backdrop-caption">
+          <time datetime="2026-01">January 2026</time>
+          <p>An evolutionary sailboat-racing simulation trained on a simplified model of sailing physics that I wrote.</p>
+        </article>
+      </section>
+
+      <nav class="project-wall" id="project-wall" aria-label="Additional projects">
+        <button class="project-preview project-preview--kashicode" type="button" data-dialog="kashicode-dialog" aria-controls="kashicode-dialog" aria-haspopup="dialog" aria-expanded="false">
+          <span class="preview-image">
+            <img src="assets/kashicode-screenshot.png" alt="">
+          </span>
+          <span class="preview-label">kashicode</span>
+        </button>
+
+        <button class="project-preview project-preview--art" type="button" data-dialog="art-dialog" aria-controls="art-dialog" aria-haspopup="dialog" aria-expanded="false">
+          <span class="preview-image">
+            <img src="assets/art-routing-chalkboard.webp" alt="">
+          </span>
+          <span class="preview-label">Adaptive Recurrent Transformer</span>
+        </button>
+
+        <button class="project-preview project-preview--maestro" type="button" data-dialog="maestro-dialog" aria-controls="maestro-dialog" aria-haspopup="dialog" aria-expanded="false">
+          <span class="preview-image">
+            <img src="assets/maestro-thumbnail.png" alt="">
+          </span>
+          <span class="preview-label">Maestro</span>
+        </button>
+      </nav>
+    </main>
+
+    <dialog class="project-dialog" id="kashicode-dialog" aria-labelledby="kashicode-title">
+      <div class="project-view">
+        <button class="dialog-close" type="button" data-close aria-label="Close kashicode">×</button>
+        <figure class="project-art project-art--kashicode">
+          <iframe
+            data-demo-src="assets/kashicode-tui-demo/index.html"
+            title="Scripted Kashicode terminal demo"
+          ></iframe>
+        </figure>
+        <article class="expanded-caption">
+          <div class="expanded-title">
+            <h2 id="kashicode-title">kashicode</h2>
+            <p class="expanded-subtitle"><em>Dynamic context management.</em></p>
+          </div>
+          <p>A visual demo of the harness I'm currently developing. By treating context as flexible rather than linear (and sacrificing a little KV-caching), kashicode provides models with the exact information necessary for every query.</p>
+          <div class="project-links">
+            <a href="not-public.html">Not Publicly Available</a>
+          </div>
+        </article>
+      </div>
+    </dialog>
+
+    <dialog class="project-dialog project-dialog--paper" id="art-dialog" aria-labelledby="art-title">
+      <div class="project-view project-view--paper">
+        <button class="dialog-close" type="button" data-close aria-label="Close Adaptive Recurrent Transformer">×</button>
+        <figure class="paper-figure">
+          <img src="assets/art-routing-chalkboard.webp" alt="the learnable routing module shown in the chalkboard diagram">
+        </figure>
+        <article class="paper-study">
+          <header class="paper-heading">
+            <time datetime="2026-04">April 2026</time>
+            <h2 id="art-title">Adaptive Recurrent Transformer</h2>
+            <p class="paper-thesis"><em>Reflection on OpenAI Parameter Golf Challenge</em></p>
+          </header>
+
+          <div class="paper-copy">
+            <p class="paper-lede"><strong>Not every token deserves equal compute.</strong></p>
+            <p>Standard language models allocate depth uniformly. Yet intuitively, some tokens are easier to predict than others. Take the following fragment:</p>
+            <p class="paper-fragment"><em>“After lunch, he was looking forward…”</em></p>
+            <p>As humans, we easily recognize the next word to likely be “to”. Accordingly, I approached this challenge with a singular thesis: not every token deserves equal compute – and dynamic recurrence can provide this adaptability.</p>
+            <p>My initial idea was to use universal transformers as a sort of artificial thinking time; each recursive step refines the output. Taking some lessons from diffusion models, I implemented a universal transformer with Fourier step embeddings. I observed diminishing returns from additional recursion and theorized that gains accrue mostly for “hard” tokens. To exploit this, I trained a gating network to stop recursion early by predicting delta-loss from the current token sequence and step embedding.</p>
+            <p>I eventually determined my goal to be broader than stopping recursion. I sought to develop a deep, memory-efficient architecture that still benefits from the step-specific expressivity of a traditional LLM. After all, transformers act differently depending on the input; why shouldn’t architectures be variable as well?</p>
+          </div>
+
+          <div class="paper-results">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Variation</th>
+                  <th scope="col">Best BPB</th>
+                  <th scope="col">Hardware</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Soft ART on PR1855</td>
+                  <td>1.0643</td>
+                  <td>8xH100</td>
+                </tr>
+                <tr>
+                  <td>Simple ART on PR1855</td>
+                  <td>1.1999</td>
+                  <td>1xH100</td>
+                </tr>
+                <tr>
+                  <td>Adaptive Recurrent Transformer 1</td>
+                  <td>1.3168</td>
+                  <td>1xH100</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="paper-results-caption"><em>Selected versions of the ART architecture. Scored in bits per byte (BPB) compression, lower is better. 10 minutes of compute for all trials.</em></p>
+          </div>
+
+          <div class="project-links">
+            <a href="https://github.com/openai/parameter-golf/pull/2107/files" aria-label="View repository for Adaptive Recurrent Transformer">Repo</a>
+          </div>
+        </article>
+      </div>
+    </dialog>
+
+    <dialog class="project-dialog" id="maestro-dialog" aria-labelledby="maestro-title">
+      <div class="project-view">
+        <button class="dialog-close" type="button" data-close aria-label="Close Maestro">×</button>
+        <figure class="project-art project-art--maestro">
+          <video data-project-video muted loop playsinline preload="metadata" poster="assets/maestro-still.jpg" controls aria-label="Maestro composing a string quartet in MuseScore">
+            <source src="assets/maestro_noaudio.mp4" type="video/mp4">
+          </video>
+          <img class="project-video-still" src="assets/maestro-still.jpg" alt="Maestro editing a string quartet in MuseScore">
+        </figure>
+        <article class="expanded-caption">
+          <div class="expanded-title">
+            <h2 id="maestro-title">Maestro</h2>
+            <p class="expanded-subtitle"><em>Cursor for MuseScore</em></p>
+          </div>
+          <p>Built with friends for a hackathon (placed 3rd), and expanded the project for my graduate applied AI course. The link includes instructions to download and try the system.</p>
+          <div class="project-links">
+            <a href="https://tidaltunes.github.io/Maestro/">Project</a>
+          </div>
+        </article>
+      </div>
+    </dialog>
+  </body>
+</html>

@@ -9,27 +9,27 @@
 (() => {
 	"use strict";
 
-	const DEMO_VERSION = "2.1.0-terminal-demo";
+	const DEMO_VERSION = "2.1.0";
 	const CONTEXT_WINDOW = 272000;
 	const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 	const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 	const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh"];
 	const MEMORY_MODES = ["none", "read", "read-write"];
 	const MODEL_OPTIONS = [
-		{ provider: "scripted-demo", id: "kashi-portfolio", scope: "recommended" },
-		{ provider: "scripted-demo", id: "context-lab", scope: "large context" },
-		{ provider: "scripted-demo", id: "ui-prototype", scope: "fast" },
+		{ provider: "demo", id: "kashi-portfolio", scope: "recommended" },
+		{ provider: "demo", id: "context-lab", scope: "large context" },
+		{ provider: "demo", id: "ui-prototype", scope: "fast" },
 	];
 	const COMMANDS = [
-		{ name: "/help", description: "Show the supported demo controls" },
-		{ name: "/tour", description: "Run the complete scripted harness tour" },
+		{ name: "/help", description: "Show the supported controls" },
+		{ name: "/tour", description: "Run the complete harness tour" },
 		{ name: "/clear", description: "Clear the visible transcript" },
-		{ name: "/new", description: "Start a fresh simulated session" },
-		{ name: "/compact", description: "Simulate context compaction" },
+		{ name: "/new", description: "Start a fresh session" },
+		{ name: "/compact", description: "Compact the active context" },
 		{ name: "/memory", description: "Cycle repository memory mode" },
-		{ name: "/model", description: "Open the demo model selector" },
-		{ name: "/about", description: "Explain the static demo boundary" },
-		{ name: "/exit", description: "Return to the simulated shell" },
+		{ name: "/model", description: "Open the model selector" },
+		{ name: "/about", description: "Show version information" },
+		{ name: "/exit", description: "Return to the shell" },
 	];
 	const INITIAL_ALLOCATION = {
 		system: 630,
@@ -230,7 +230,7 @@
 
 	function beginShellBoot() {
 		appendShellMessage("Last login: Tue Aug 11 19:42:06 on ttys003", "dim");
-		const command = "./kashicode-demo.sh";
+		const command = "kashicode";
 		let index = 0;
 		state.autoTypingShell = true;
 		schedule(state.bootTimers, function typeNextCharacter() {
@@ -251,8 +251,8 @@
 		appendShellRecord(command);
 		elements.shellInput.value = "";
 		if (!command) return;
-		if (["./kashicode-demo.sh", "./kashicode.sh", "kashicode"].includes(command)) {
-			appendShellMessage("Kashicode scripted portfolio runtime  ·  frontend-only  ·  no provider connection", "demo-notice");
+		if (["./kashicode.sh", "kashicode"].includes(command)) {
+			appendShellMessage("Starting Kashicode…", "dim");
 			schedule(state.bootTimers, () => launchKashicode(true), 420);
 			return;
 		}
@@ -261,7 +261,7 @@
 			return;
 		}
 		if (command === "help") {
-			appendShellMessage("Commands: ./kashicode-demo.sh  clear  help");
+			appendShellMessage("Commands: kashicode  clear  help");
 			return;
 		}
 		appendShellMessage(`zsh: command not found: ${command}`);
@@ -274,7 +274,7 @@
 		elements.kashicodeScreen.hidden = false;
 		updateTerminalTitle();
 		resetKashicodeSession(false);
-		elements.promptInput.focus();
+		elements.promptInput.focus({ preventScroll: true });
 		if (autoTour) {
 			state.autoTourTimer = window.setTimeout(() => {
 				state.autoTourTimer = undefined;
@@ -294,8 +294,8 @@
 		elements.kashicodeScreen.hidden = true;
 		elements.shellScreen.hidden = false;
 		updateTerminalTitle();
-		appendShellMessage("Kashicode demo exited. No model, shell command, or backend process was running.", "dim");
-		elements.shellInput.focus();
+		appendShellMessage("Kashicode exited.", "dim");
+		elements.shellInput.focus({ preventScroll: true });
 	}
 
 	function cancelAutoTour() {
@@ -610,7 +610,7 @@
 		elements.toolCount.textContent = String(tools.length);
 		elements.toolList.textContent = tools.join("  ");
 
-		elements.footerStats.textContent = "demo";
+		elements.footerStats.textContent = `↑${formatTokens(state.inputTokens)} ↓${formatTokens(state.outputTokens)} ${contextPercent.toFixed(1)}%/272k (auto)`;
 		const model = currentModel();
 		elements.footerProvider.textContent = model.provider;
 		elements.footerModel.textContent = model.id;
@@ -635,7 +635,7 @@
 			renderActivity(activity);
 		}
 		setBusy(false);
-		if (showMessage) addSystem("interrupted", "Scripted playback stopped; no provider or process was running.", true);
+		if (showMessage) addSystem("interrupted", "Playback stopped.", true);
 		return true;
 	}
 
@@ -687,7 +687,7 @@
 							name: "edit",
 							path: "packages/coding-agent/src/core/context-allocation.ts",
 							output:
-								"oldText/newText are counted under FILES while present in active tool history.\n\n[scripted inspection — no file changed]",
+								"oldText/newText are counted under FILES while present in active tool history.",
 						},
 					],
 					files: ["invisible-tools.ts", "context-allocation.ts"],
@@ -709,7 +709,7 @@
 			],
 			compactAfterSteps: true,
 			response:
-				"Kashicode treats context as structured, inspectable state rather than one undifferentiated transcript. `repo-info` raises memory detail only where needed, then its raw tool trace removes itself from the next model-facing conversation while the updated top-level memory remains. Press `Ctrl+X` to compare the user and model transcript views.\n\nThe sidebar tracks system instructions, tools, skills, project instructions, memory, file payloads, chat, and compacted history separately. Before compaction, Kashicode can update repository state and decision history in independent calls; afterward, file/tool payloads leave active context while the append-only JSONL session still preserves the branch. `/debug` can reveal the exact last provider request, and complete TUI folders can be swapped without rewriting the agent loop.\n\nEverything shown here is scripted demo data; no backend action occurred.",
+				"Kashicode treats context as structured, inspectable state rather than one undifferentiated transcript. `repo-info` raises memory detail only where needed, then its raw tool trace removes itself from the next model-facing conversation while the updated top-level memory remains. Press `Ctrl+X` to compare the user and model transcript views.\n\nThe sidebar tracks system instructions, tools, skills, project instructions, memory, file payloads, chat, and compacted history separately. Before compaction, Kashicode can update repository state and decision history in independent calls; afterward, file/tool payloads leave active context while the append-only JSONL session still preserves the branch. `/debug` can reveal the exact last provider request, and complete TUI folders can be swapped without rewriting the agent loop.",
 		},
 		frontend: {
 			skill: ["frontend-design", "Follow the project's terminal-first interaction and layout conventions."],
@@ -720,7 +720,7 @@
 					thinkingTokens: 173,
 					tools: [
 						{ name: "find", path: "src  (depth 3)", output: "src/app.ts\nsrc/styles.css\nsrc/components/project-card.ts" },
-						{ name: "read", path: "src/components/project-card.ts", output: "export function ProjectCard(project) { ... }\n// scripted 48-line preview" },
+						{ name: "read", path: "src/components/project-card.ts", output: "export function ProjectCard(project) { ... }\n// 48-line preview" },
 					],
 					files: ["project-card.ts", "styles.css"],
 				},
@@ -729,13 +729,13 @@
 					thinking: "The existing media region can host one responsive iframe. The terminal should fill it directly without an additional decorative card.",
 					thinkingTokens: 126,
 					tools: [
-						{ name: "edit", path: "src/components/project-card.ts", output: "+ embed isolated Kashicode demo iframe\n+ preserve terminal aspect ratio\n+ add accessible title\n\n[scripted diff — no file changed]" },
+						{ name: "edit", path: "src/components/project-card.ts", output: "+ embed isolated Kashicode iframe\n+ preserve terminal aspect ratio\n+ add accessible title" },
 					],
 					files: ["project-card.ts"],
 				},
 			],
 			response:
-				"The project card can host the terminal as a single responsive media surface. The simulated change preserves the native terminal proportions on desktop and collapses the context rail at narrow widths.\n\nThis is a frontend-only demonstration; the edit and file contents were scripted.",
+				"The project card can host the terminal as a single responsive media surface. The change preserves the native terminal proportions on desktop and collapses the context rail at narrow widths.",
 		},
 		memory: {
 			skill: ["repository-memory", "Use the repository map for orientation and history for durable decisions."],
@@ -761,7 +761,7 @@
 				},
 			],
 			response:
-				"Repository memory is formatted into top-level project context after `AGENTS.md` or `CLAUDE.md`. `repo-info` increases detail for a selected path, while `history` reads durable decisions by date range. Both tools disappear entirely when memory is disabled.\n\nThe source read confirms the scripted memory map rather than trusting it blindly.",
+				"Repository memory is formatted into top-level project context after `AGENTS.md` or `CLAUDE.md`. `repo-info` increases detail for a selected path, while `history` reads durable decisions by date range. Both tools disappear entirely when memory is disabled.\n\nThe source read confirms the memory map rather than trusting it blindly.",
 		},
 		implementation: {
 			skill: ["code-review", "Prioritize behavioral regressions, ownership boundaries, and focused verification."],
@@ -781,14 +781,14 @@
 					thinking: "The ownership is local to context allocation. One correction and one focused assertion are sufficient.",
 					thinkingTokens: 167,
 					tools: [
-						{ name: "edit", path: "packages/coding-agent/src/core/context-allocation.ts", output: "- stale category assignment\n+ current category assignment\n\n[scripted diff — no file changed]" },
-						{ name: "bash", command: "npm test", output: "tests 44\npass 44\nfail 0\n\n[scripted output — no command executed]" },
+						{ name: "edit", path: "packages/coding-agent/src/core/context-allocation.ts", output: "- stale category assignment\n+ current category assignment" },
+						{ name: "bash", command: "npm test", output: "tests 44\npass 44\nfail 0" },
 					],
 					files: ["context-allocation.ts"],
 				},
 			],
 			response:
-				"The simulated allocation correction is scoped to `context-allocation.ts` and covered by the focused harness test. The displayed test run reports 44 passing tests.\n\nNo repository file or process was touched by this static demo.",
+				"The allocation correction is scoped to `context-allocation.ts` and covered by the focused harness test. The test run reports 44 passing tests.",
 		},
 	};
 
@@ -827,7 +827,7 @@
 			if (!(await waitForRun(260, runId))) return;
 			addSystem(
 				"memory",
-				"Repository state and decision history updated independently before compaction (scripted).",
+				"Repository state and decision history updated independently before compaction.",
 			);
 			if (!(await waitForRun(260, runId))) return;
 			applyCompactionBoundary();
@@ -868,7 +868,7 @@
 			option.addEventListener("click", () => {
 				elements.promptInput.value = command.name;
 				hideCommandMenu();
-				elements.promptInput.focus();
+				elements.promptInput.focus({ preventScroll: true });
 			});
 			elements.commandMenu.append(option);
 		}
@@ -941,7 +941,7 @@
 		state.files = [];
 		const node = document.createElement("div");
 		node.className = "compaction-line";
-		node.innerHTML = `<strong>[compaction]</strong> Replaced earlier scripted conversation and file payloads with a ${formatTokens(state.allocation.compact)} token summary. ${formatTokens(before)} tokens before compaction.`;
+		node.innerHTML = `<strong>[compaction]</strong> Replaced earlier conversation and file payloads with a ${formatTokens(state.allocation.compact)} token summary. ${formatTokens(before)} tokens before compaction.`;
 		appendTranscript(node);
 		updateHarnessState();
 	}
@@ -972,12 +972,12 @@
 		elements.promptInput.value = "";
 		resizePrompt();
 		hideCommandMenu();
-		if (showMessage) addSystem("session", "New local scripted session. No data is persisted.");
+		if (showMessage) addSystem("session", "New local session.");
 		updateHarnessState();
 	}
 
 	function helpText() {
-		return "Commands: `/tour`, `/clear`, `/new`, `/compact`, `/memory`, `/model`, `/about`, `/exit`. Keys: Ctrl+L model, Shift+Tab thinking time, Ctrl+R then 1–4 activity detail, Ctrl+T thinking visibility, Ctrl+X user/model view, Escape interrupt, Ctrl+C clear/interrupt, Ctrl+D exit. Prefix `!` for simulated bash.";
+		return "Commands: `/tour`, `/clear`, `/new`, `/compact`, `/memory`, `/model`, `/about`, `/exit`. Keys: Ctrl+L model, Shift+Tab thinking time, Ctrl+R then 1–4 activity detail, Ctrl+T thinking visibility, Ctrl+X user/model view, Escape interrupt, Ctrl+C clear/interrupt, Ctrl+D exit. Prefix `!` for bash.";
 	}
 
 	function simulateBash(command) {
@@ -987,10 +987,10 @@
 			: command === "ls"
 				? "AGENTS.md  README.md  package.json  packages  src  tests"
 				: command === "git status"
-					? "On branch main\nnothing to commit, working tree clean\n\n[scripted output]"
-					: `demo shell: '${command || "(empty)"}' was not executed`;
+					? "On branch main\nnothing to commit, working tree clean"
+					: `zsh: command not found: ${command || "(empty)"}`;
 		const step = {
-			heading: "Running a simulated shell command.",
+			heading: "Running a shell command.",
 			thinking: "User-prefixed bash bypasses the model response path but is still rendered into the session transcript.",
 			thinkingTokens: 0,
 			tools: [{ name: "bash", command, output }],
@@ -1028,13 +1028,13 @@
 				openModelDialog();
 				break;
 			case "/about":
-				addSystem("demo", `Kashicode terminal demo ${DEMO_VERSION}. All content is deterministic local presentation data; no backend, model, command, file, credential, or storage API is connected.`);
+				addSystem("about", `Kashicode terminal ${DEMO_VERSION}.`);
 				break;
 			case "/exit":
 				exitKashicode();
 				break;
 			default:
-				addSystem("command", `Unknown demo command: ${command}. Run /help.`, true);
+				addSystem("command", `Unknown command: ${command}. Run /help.`, true);
 		}
 	}
 
@@ -1076,7 +1076,7 @@
 
 	function closeModelDialog() {
 		elements.modelDialog.hidden = true;
-		if (state.mode === "kashicode") elements.promptInput.focus();
+		if (state.mode === "kashicode") elements.promptInput.focus({ preventScroll: true });
 	}
 
 	function selectModel(index) {
@@ -1085,7 +1085,7 @@
 		const model = currentModel();
 		closeModelDialog();
 		updateHarnessState();
-		addSystem("model", `${model.provider}/${model.id} selected for display. No provider connection exists.`);
+		addSystem("model", `${model.id} selected.`);
 	}
 
 	function handleModelDialogKey(event) {
@@ -1230,6 +1230,6 @@
 
 	updateHarnessState();
 	updateTerminalTitle();
-	elements.shellInput.focus();
+	elements.shellInput.focus({ preventScroll: true });
 	beginShellBoot();
 })();

@@ -4,16 +4,13 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta
-			name="description"
-			content="A self-contained, scripted macOS terminal simulation of the Kashicode coding harness."
-		/>
-		<title>Kashicode Terminal Demo</title>
+		<meta name="description" content="The Kashicode coding harness interface." />
+		<title>Kashicode Terminal</title>
 		<link rel="stylesheet" href="./styles.css" />
 	</head>
 	<body>
 		<main class="demo-stage">
-			<section class="terminal-window" aria-label="Kashicode scripted terminal demo">
+			<section class="terminal-window" aria-label="Kashicode terminal">
 				<header class="terminal-titlebar">
 					<div class="traffic-lights" aria-hidden="true"><span></span><span></span><span></span></div>
 					<div class="terminal-title" id="terminal-title">
@@ -24,15 +21,15 @@
 				</header>
 
 				<div class="terminal-viewport">
-					<section class="shell-screen" id="shell-screen" aria-label="Simulated command line">
+					<section class="shell-screen" id="shell-screen" aria-label="Command line">
 						<div class="shell-output" id="shell-output" aria-live="polite"></div>
 						<form class="shell-prompt-line" id="shell-form" autocomplete="off">
 							<span class="shell-user">kashi@studio-mac</span><span class="shell-separator">:</span><span class="shell-path">~/portfolio-lab</span><span class="shell-symbol">%</span>
-							<input id="shell-input" aria-label="Simulated terminal command" autocomplete="off" spellcheck="false" />
+							<input id="shell-input" aria-label="Terminal command" autocomplete="off" spellcheck="false" />
 						</form>
 					</section>
 
-					<section class="kashicode-screen" id="kashicode-screen" aria-label="Kashicode scripted interface" hidden>
+					<section class="kashicode-screen" id="kashicode-screen" aria-label="Kashicode interface" hidden>
 						<header class="kashi-header">
 							<strong class="kashi-brand">kashicode</strong>
 							<div class="kashi-hotkeys" aria-label="Keyboard shortcuts">
@@ -54,7 +51,7 @@
 						</div>
 
 						<div class="kashi-workspace">
-							<section class="conversation-pane" aria-label="Demo conversation">
+							<section class="conversation-pane" aria-label="Conversation">
 								<div class="transcript" id="transcript" aria-live="polite"></div>
 								<button class="latest-button" id="latest-button" type="button" hidden>↓ latest</button>
 							</section>
@@ -93,23 +90,23 @@
 						<section class="prompt-region" aria-label="Kashicode prompt editor">
 							<div class="prompt-title">PROMPT</div>
 							<form id="prompt-form" autocomplete="off">
-								<textarea id="prompt-input" rows="1" aria-label="Ask the scripted Kashicode demo" autocomplete="off" spellcheck="false"></textarea>
+								<textarea id="prompt-input" rows="1" aria-label="Ask Kashicode" autocomplete="off" spellcheck="false"></textarea>
 							</form>
-							<div class="command-menu" id="command-menu" role="listbox" aria-label="Demo commands" hidden></div>
+							<div class="command-menu" id="command-menu" role="listbox" aria-label="Commands" hidden></div>
 						</section>
 
 						<footer class="kashi-footer">
 							<div class="footer-cwd">~</div>
 							<div class="footer-stats-row">
-								<span id="footer-stats">demo</span>
-								<span class="footer-model">(<span id="footer-provider">scripted-demo</span>) <b id="footer-model">kashi-portfolio</b> <i>•</i> <b id="footer-thinking">medium</b></span>
+								<span id="footer-stats">↑0 ↓0 1.6%/272k (auto)</span>
+								<span class="footer-model">(<span id="footer-provider">demo</span>) <b id="footer-model">kashi-portfolio</b> <i>•</i> <b id="footer-thinking">medium</b></span>
 							</div>
 						</footer>
 
 						<div class="terminal-dialog-backdrop" id="model-dialog" hidden>
 							<div class="terminal-dialog" role="dialog" aria-modal="true" aria-labelledby="model-dialog-title">
-								<div class="dialog-title" id="model-dialog-title">Select demo model</div>
-								<div class="dialog-subtitle">Display-only options · no provider connection</div>
+								<div class="dialog-title" id="model-dialog-title">Select model</div>
+								<div class="dialog-subtitle">Available configurations</div>
 								<div class="model-options" id="model-options"></div>
 								<div class="dialog-help">↑/↓ select · enter confirm · esc cancel</div>
 							</div>
@@ -119,7 +116,7 @@
 			</section>
 		</main>
 
-		<noscript>This scripted Kashicode terminal demo requires JavaScript for local playback.</noscript>
+		<noscript>Kashicode requires JavaScript.</noscript>
 		<script src="./demo.js"></script>
 	</body>
 </html>

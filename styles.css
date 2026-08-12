@@ -305,6 +305,7 @@
   }
 
   .project-preview--maestro .preview-image img {
+    image-rendering: pixelated;
     object-fit: contain;
   }
 

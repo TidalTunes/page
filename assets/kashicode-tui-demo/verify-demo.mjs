@@ -29,7 +29,7 @@ for (const [pattern, label] of forbidden) {
 	if (pattern.test(combined)) throw new Error(`Static demo contains forbidden ${label}`);
 }
 
-if (!combined.includes("SCRIPTED DEMO") || !combined.includes("frontend-only")) {
+if (!html.includes("SCRIPTED DEMO · NO MODEL/BACKEND") || !html.includes('id="footer-provider">demo</span>')) {
 	throw new Error("Demo labeling is missing");
 }
 
@@ -38,7 +38,7 @@ for (const id of ["shell-screen", "kashicode-screen", "transcript", "allocation-
 }
 
 for (const behavior of [
-	"./kashicode-demo.sh",
+	'const command = "kashicode"',
 	"SCENARIOS",
 	"runScenario",
 	"beginActivityTool",
@@ -53,7 +53,11 @@ if (!script.includes('status: "pending"') || !script.includes('tool.status = "do
 	throw new Error("Tool calls do not expose the scripted pending-to-complete lifecycle");
 }
 
-if (script.includes('Kashicode [SCRIPTED DEMO]') || !script.includes('elements.footerStats.textContent = "demo"')) {
+if (
+	script.includes('Kashicode [SCRIPTED DEMO]') ||
+	!script.includes("const contextPercent") ||
+	!script.includes('provider: "demo"')
+) {
 	throw new Error("Terminal title or footer framing does not match the portfolio presentation");
 }
 
