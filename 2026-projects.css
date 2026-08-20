@@ -254,8 +254,15 @@
     color: var(--ink);
   }
 
+  .research-ellipsis {
+    margin-top: clamp(0.7rem, 1.5vh, 1rem);
+    color: var(--muted);
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+  }
+
   .results-table {
-    margin-top: clamp(3rem, 8vh, 6rem);
+    margin-top: clamp(1.75rem, 4vh, 3rem);
   }
 
   .results-table table {
